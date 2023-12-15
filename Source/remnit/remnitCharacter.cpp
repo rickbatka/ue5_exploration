@@ -1,3 +1,4 @@
+
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "remnitCharacter.h"
@@ -54,13 +55,18 @@ AremnitCharacter::AremnitCharacter()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
+//void AremnitCharacter::StartIFrames()
+//{
+//	GEngine->AddOnScreenDebugMessage(2, 1, FColor::Red, TEXT("WHAT"));
+//}
+
 void AremnitCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
 
 	//Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller)) 
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
@@ -68,6 +74,7 @@ void AremnitCharacter::BeginPlay()
 		}
 	}
 }
+
 
 void AremnitCharacter::SwingSwordMedium() {
 	bShouldSwingSwordMedium = true;
@@ -78,12 +85,33 @@ void AremnitCharacter::SwingSwordMedium() {
 
 void AremnitCharacter::TryRoll() {
 	if (!GetCharacterMovement()->IsFalling()) {
-		PlayAnimMontage(RollForwardMontage);
-	}
-}
 
-//////////////////////////////////////////////////////////////////////////
-// Input
+		// Get current movement vector relative to player
+		// Set movement speed in that vector 
+		// Play appropriate roll animation (direction)
+		// during roll: update movement speed to remain constant every Tick
+		// set IFrames
+		// after roll: stop setting movement vector
+		// 
+
+		RollDirection = GetCharacterMovement()->GetLastUpdateVelocity();
+		RollDirection.Normalize();
+		if (RollDirection.IsZero()) {
+			RollDirection = FVector::ForwardVector;
+		}
+		bIsRolling = true;
+
+		PlayAnimMontage(RollForwardMontage, 1.25);
+		
+		UAnimInstance* AnimInstance = (GetMesh()) ? GetMesh()->GetAnimInstance() : nullptr;
+		if (AnimInstance) {
+			GEngine->AddOnScreenDebugMessage(3, 1, FColor::Red, TEXT("Added handler!"));
+			// TODO this works, but I'm abandoning it I think
+			AnimInstance->AddExternalNotifyHandler(this, TEXT("AnimNotify_StartIFrames"));
+		}
+	}
+	
+}
 
 void AremnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -146,4 +174,33 @@ void AremnitCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void AremnitCharacter::Tick(float DeltaSeconds)
+{
+
+	GEngine->AddOnScreenDebugMessage(1, 1, FColor::Red, *FString::Printf(TEXT("Is Rolling? %d"), bIsRolling));
+	if (bIsRolling) {
+		GetCharacterMovement()->ConsumeInputVector();
+		GetCharacterMovement()->AddInputVector(RollDirection * RollSpeed);
+
+
+		//SetActorLocation(GetActorLocation() + RollDirection * RollSpeed);
+		GEngine->AddOnScreenDebugMessage(4, 1, FColor::Red, RollDirection.ToString());
+	}
+}
+
+void AremnitCharacter::RollIFramesStarted()
+{
+	GEngine->AddOnScreenDebugMessage(6, 0.25, FColor::Red, TEXT("Started IFrames"));
+}
+
+void AremnitCharacter::RollIFramesEnded()
+{
+	GEngine->AddOnScreenDebugMessage(6, 0.5, FColor::Red, TEXT("Ended IFrames"));
+}
+
+void AremnitCharacter::AnimNotify_StartIFrames()
+{
+	// Do nothing, for now using AnimNotifyState instead
 }

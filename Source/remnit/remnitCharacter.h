@@ -15,6 +15,7 @@ struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
+
 UCLASS(config=Game)
 class AremnitCharacter : public ACharacter
 {
@@ -66,9 +67,15 @@ class AremnitCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* SwordAttackAMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float RollSpeed = 5.0;
+	
+
 public:
 	AremnitCharacter();
 	
+	//UFUNCTION()
+	//void StartIFrames();
 
 protected:
 
@@ -87,6 +94,13 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bShouldSwingSwordMedium;
+	
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsRolling;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector RollDirection;
+
 
 protected:
 	// APawn interface
@@ -95,10 +109,27 @@ protected:
 	// To add mapping context
 	virtual void BeginPlay();
 
+	void Tick(float DeltaSeconds) override;
+
+	
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	UFUNCTION()
+	void RollIFramesStarted();
+	
+	UFUNCTION()
+	void RollIFramesEnded();
+	/**
+	 * Important! the "AnimNotify_" prefix is a magic string. The call to
+	 * AnimInstance->AddExternalNotifyHandler will not work without that
+	 * magic prefix, even though it looks like it all works!
+	 */
+	UFUNCTION(BlueprintCallable)
+	virtual void AnimNotify_StartIFrames();
+
 };
 
