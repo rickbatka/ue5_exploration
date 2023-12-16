@@ -3,19 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Animation/AnimNotifies/AnimNotifyState.h"
-#include "remnitCharacter.h"
+#include "ANS_GenericAnimStateNotifier.h"
 #include "ANS_IFramesAnimNotifyState.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class REMNIT_API UANS_IFramesAnimNotifyState : public UAnimNotifyState
+class REMNIT_API UANS_IFramesAnimNotifyState : public UANS_GenericAnimStateNotifier
 {
 	GENERATED_BODY()
-	
-	virtual void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference) override;
-	virtual void NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float FrameDeltaTime, const FAnimNotifyEventReference& EventReference) override;
-	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
 };

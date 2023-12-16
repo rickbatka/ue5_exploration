@@ -1,4 +1,3 @@
-
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "remnitCharacter.h"
@@ -15,13 +14,13 @@
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
-// AremnitCharacter
+// ARemnitCharacter
 
-AremnitCharacter::AremnitCharacter()
+ARemnitCharacter::ARemnitCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-		
+
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -60,13 +59,13 @@ AremnitCharacter::AremnitCharacter()
 //	GEngine->AddOnScreenDebugMessage(2, 1, FColor::Red, TEXT("WHAT"));
 //}
 
-void AremnitCharacter::BeginPlay()
+void ARemnitCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
 
 	//Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller)) 
+	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
@@ -76,74 +75,118 @@ void AremnitCharacter::BeginPlay()
 }
 
 
-void AremnitCharacter::SwingSwordMedium() {
+void ARemnitCharacter::SwingSwordMedium()
+{
 	bShouldSwingSwordMedium = true;
-	if (!GetCharacterMovement()->IsFalling()) {
+	if (!GetCharacterMovement()->IsFalling())
+	{
 		PlayAnimMontage(SwordAttackAMontage);
 	}
 }
 
-void AremnitCharacter::TryRoll() {
-	if (!GetCharacterMovement()->IsFalling()) {
-
-		// Get current movement vector relative to player
-		// Set movement speed in that vector 
-		// Play appropriate roll animation (direction)
-		// during roll: update movement speed to remain constant every Tick
-		// set IFrames
-		// after roll: stop setting movement vector
-		// 
-
-		RollDirection = GetCharacterMovement()->GetLastUpdateVelocity();
-		RollDirection.Normalize();
-		if (RollDirection.IsZero()) {
-			RollDirection = FVector::ForwardVector;
-		}
-		bIsRolling = true;
-
-		PlayAnimMontage(RollForwardMontage, 1.25);
-		
-		UAnimInstance* AnimInstance = (GetMesh()) ? GetMesh()->GetAnimInstance() : nullptr;
-		if (AnimInstance) {
-			GEngine->AddOnScreenDebugMessage(3, 1, FColor::Red, TEXT("Added handler!"));
-			// TODO this works, but I'm abandoning it I think
-			AnimInstance->AddExternalNotifyHandler(this, TEXT("AnimNotify_StartIFrames"));
-		}
+void ARemnitCharacter::TryRoll()
+{
+	if (bIsRolling || GetCharacterMovement()->IsFalling())
+	{
+		return;
 	}
-	
+
+	// Get current movement vector relative to player
+	// Set movement speed in that vector 
+	// Play appropriate roll animation (direction)
+	// during roll: update movement speed to remain constant every Tick
+	// set IFrames
+	// after roll: stop setting movement vector
+	// 
+
+	if (const auto Duration = PlayAnimMontage(RollForwardMontage, 1.25); Duration == 0.)
+	{
+		UE_LOG(LogActor, Error, TEXT("Failed to execute roll action; bailing"));
+		bIsRolling = false;
+		return;
+	}
+
+	VelocityBeforeRoll = GetCharacterMovement()->GetLastUpdateVelocity();
+	RollDirection = GetCharacterMovement()->GetLastUpdateVelocity();
+	// Roll forward if character was standing still
+	if (RollDirection.IsZero())
+	{
+		RollDirection = GetOwner()->GetActorForwardVector();
+	}
+	RollDirection.Normalize();
+	bIsRolling = true;
 }
 
-void AremnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
-	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
-		
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	{
 		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		// Attacking
-		EnhancedInputComponent->BindAction(SwordMediumAction, ETriggerEvent::Triggered, this, &AremnitCharacter::SwingSwordMedium);
+		EnhancedInputComponent->BindAction(SwordMediumAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::SwingSwordMedium);
 
 		// Moving
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AremnitCharacter::Move);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::Move);
 
 		// Dodging
-		EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Triggered, this, &AremnitCharacter::TryRoll);
+		EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::TryRoll);
 
 		// Looking
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AremnitCharacter::Look);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::Look);
 	}
 	else
 	{
-		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+		UE_LOG(LogTemplateCharacter, Error,
+		       TEXT(
+			       "'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."
+		       ), *GetNameSafe(this));
 	}
 }
 
-void AremnitCharacter::Move(const FInputActionValue& Value)
+void ARemnitCharacter::OnNotifyBegin(const FName NotifyName)
+{
+	if (NotifyName == "ANS_AnimRunning")
+	{
+		
+	}
+	else if (NotifyName == "ANS_IFramesAnimNotifyState")
+	{
+		
+	}
+}
+
+void ARemnitCharacter::OnNotifyEnd(const FName NotifyName)
+{
+	if (NotifyName == "ANS_AnimRunning" && bIsRolling)
+	{
+		bIsRolling = false;
+		
+		if(GetMovementComponent()->GetLastInputVector().IsZero())
+		{
+			// Stop as soon as possible if no movement input - so the character doesn't "glide" to a stop after a roll.
+			GetMovementComponent()->ConsumeInputVector();
+		}else
+		{
+			// Hack, exceed the speed limit to ensure they are running after roll, it feels nicer
+			GetMovementComponent()->Velocity = VelocityBeforeRoll + 20; 
+			GetMovementComponent()->UpdateComponentVelocity();
+		}
+		
+	}
+	else if (NotifyName == "ANS_IFramesAnimNotifyState")
+	{
+		UE_LOG(LogActor, Log, TEXT("IFrames ended"));
+	}
+}
+
+void ARemnitCharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	FVector2D MovementVector = Value.Get<FVector2D>();
+	const FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
@@ -153,7 +196,7 @@ void AremnitCharacter::Move(const FInputActionValue& Value)
 
 		// get forward vector
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	
+
 		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
@@ -163,10 +206,10 @@ void AremnitCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
-void AremnitCharacter::Look(const FInputActionValue& Value)
+void ARemnitCharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
+	const auto LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
@@ -176,31 +219,16 @@ void AremnitCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void AremnitCharacter::Tick(float DeltaSeconds)
+void ARemnitCharacter::Tick(float DeltaSeconds)
 {
-
-	GEngine->AddOnScreenDebugMessage(1, 1, FColor::Red, *FString::Printf(TEXT("Is Rolling? %d"), bIsRolling));
-	if (bIsRolling) {
-		GetCharacterMovement()->ConsumeInputVector();
-		GetCharacterMovement()->AddInputVector(RollDirection * RollSpeed);
-
-
-		//SetActorLocation(GetActorLocation() + RollDirection * RollSpeed);
-		GEngine->AddOnScreenDebugMessage(4, 1, FColor::Red, RollDirection.ToString());
+	if (bIsRolling)
+	{
+		SetActorLocation(GetActorLocation() + RollDirection * RollSpeed, true);
+		lookat
 	}
 }
 
-void AremnitCharacter::RollIFramesStarted()
-{
-	GEngine->AddOnScreenDebugMessage(6, 0.25, FColor::Red, TEXT("Started IFrames"));
-}
-
-void AremnitCharacter::RollIFramesEnded()
-{
-	GEngine->AddOnScreenDebugMessage(6, 0.5, FColor::Red, TEXT("Ended IFrames"));
-}
-
-void AremnitCharacter::AnimNotify_StartIFrames()
-{
-	// Do nothing, for now using AnimNotifyState instead
-}
+// void ARemnitCharacter::AnimNotify_StartIFrames()
+// {
+// 	// Do nothing, for now using AnimNotifyState instead
+// }

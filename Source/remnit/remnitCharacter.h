@@ -15,9 +15,23 @@ struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
+UINTERFACE(MinimalAPI)
+class UAnimStateListener : public UInterface
+{
+	GENERATED_BODY()
+};
+
+class IAnimStateListener
+{
+	GENERATED_BODY()
+
+public:
+	virtual void OnNotifyBegin(const FName NotifyName) {}
+	virtual void OnNotifyEnd(const FName NotifyName) {}
+};
 
 UCLASS(config=Game)
-class AremnitCharacter : public ACharacter
+class ARemnitCharacter : public ACharacter, public IAnimStateListener
 {
 	GENERATED_BODY()
 
@@ -28,7 +42,7 @@ class AremnitCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
-	
+
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
@@ -69,22 +83,25 @@ class AremnitCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	float RollSpeed = 5.0;
-	
 
 public:
-	AremnitCharacter();
-	
+	ARemnitCharacter();
+
 	//UFUNCTION()
 	//void StartIFrames();
 
-protected:
+	UFUNCTION()
+	virtual void OnNotifyBegin(const FName NotifyName) override;
+	UFUNCTION()
+	virtual void OnNotifyEnd(const FName NotifyName) override;
 
+protected:
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
+
 	void SwingSwordMedium();
 	void TryRoll();
 
@@ -94,42 +111,36 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bShouldSwingSwordMedium;
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsRolling;
 
 	UPROPERTY(BlueprintReadOnly)
 	FVector RollDirection;
-
+	FVector VelocityBeforeRoll;
 
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
+
 	// To add mapping context
-	virtual void BeginPlay();
+	virtual void BeginPlay() override;
 
-	void Tick(float DeltaSeconds) override;
+	virtual void Tick(float DeltaSeconds) override;
 
-	
+	FTimerHandle RollingAnimationTimerHandle;
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-
-	UFUNCTION()
-	void RollIFramesStarted();
 	
-	UFUNCTION()
-	void RollIFramesEnded();
 	/**
 	 * Important! the "AnimNotify_" prefix is a magic string. The call to
 	 * AnimInstance->AddExternalNotifyHandler will not work without that
 	 * magic prefix, even though it looks like it all works!
 	 */
-	UFUNCTION(BlueprintCallable)
-	virtual void AnimNotify_StartIFrames();
-
+	// UFUNCTION(BlueprintCallable)
+	// virtual void AnimNotify_StartIFrames();
 };
-
