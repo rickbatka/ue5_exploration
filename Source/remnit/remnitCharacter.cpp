@@ -111,7 +111,7 @@ void ARemnitCharacter::TryRoll()
 	// Roll forward if character was standing still
 	if (RollDirection.IsZero())
 	{
-		RollDirection = GetOwner()->GetActorForwardVector();
+		RollDirection = GetTransform().GetRotation().GetForwardVector();
 	}
 	RollDirection.Normalize();
 	bIsRolling = true;
@@ -224,7 +224,6 @@ void ARemnitCharacter::Tick(float DeltaSeconds)
 	if (bIsRolling)
 	{
 		SetActorLocation(GetActorLocation() + RollDirection * RollSpeed, true);
-		lookat
 	}
 }
 
