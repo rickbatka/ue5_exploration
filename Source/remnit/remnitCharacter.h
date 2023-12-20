@@ -118,6 +118,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	FVector RollDirection;
 	FVector VelocityBeforeRoll;
+	FLinearColor BodyColorBeforeRoll;
 
 protected:
 	// APawn interface

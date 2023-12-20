@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "remnitCharacter.h"
+
+#include "ComponentReregisterContext.h"
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -101,20 +103,11 @@ void ARemnitCharacter::TryRoll()
 
 	if (const auto Duration = PlayAnimMontage(RollForwardMontage, 1.25); Duration == 0.)
 	{
-		UE_LOG(LogActor, Error, TEXT("Failed to execute roll action; bailing"));
+		UE_LOG(LogActorComponent, Error, TEXT("Failed to execute roll action; bailing"));
 		bIsRolling = false;
-		return;
 	}
 
-	VelocityBeforeRoll = GetCharacterMovement()->GetLastUpdateVelocity();
-	RollDirection = GetCharacterMovement()->GetLastUpdateVelocity();
-	// Roll forward if character was standing still
-	if (RollDirection.IsZero())
-	{
-		RollDirection = GetTransform().GetRotation().GetForwardVector();
-	}
-	RollDirection.Normalize();
-	bIsRolling = true;
+	// If the animation plays, it will start when the ANS_AnimRunning state triggers
 }
 
 void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -149,13 +142,41 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 void ARemnitCharacter::OnNotifyBegin(const FName NotifyName)
 {
+	/**
+	 * Start Rolling
+	 */
 	if (NotifyName == "ANS_AnimRunning")
 	{
-		
+		VelocityBeforeRoll = GetCharacterMovement()->GetLastUpdateVelocity();
+		RollDirection = GetCharacterMovement()->GetLastUpdateVelocity();
+		// Roll forward if character was standing still
+		if (RollDirection.IsZero())
+		{
+			RollDirection = GetTransform().GetRotation().GetForwardVector();
+		}
+		RollDirection.Normalize();
+		bIsRolling = true;
 	}
+	/**
+	 * Start IFrames
+	 */
 	else if (NotifyName == "ANS_IFramesAnimNotifyState")
 	{
-		
+		// TODO Hack: Assuming body material is first material on mannequin.
+		if (const auto Material = GetMesh()->GetMaterials()[0])
+		{
+			TArray<FMaterialParameterInfo> OutParameterInfo;
+			TArray<FGuid> OutParameterIds;
+			Material->GetAllVectorParameterInfo(OutParameterInfo, OutParameterIds);
+			for (int i = 0; i < OutParameterInfo.Num(); ++i)
+			{
+				if(OutParameterInfo[i].Name == "BodyColor")
+				{
+					Material->GetVectorParameterValue(OutParameterInfo[i], BodyColorBeforeRoll);
+					GetMesh()->CreateDynamicMaterialInstance(0, Material)->SetVectorParameterValue("BodyColor", FLinearColor::Green);
+				}
+			}
+		}
 	}
 }
 
@@ -164,22 +185,29 @@ void ARemnitCharacter::OnNotifyEnd(const FName NotifyName)
 	if (NotifyName == "ANS_AnimRunning" && bIsRolling)
 	{
 		bIsRolling = false;
-		
-		if(GetMovementComponent()->GetLastInputVector().IsZero())
+
+		if (GetMovementComponent()->GetLastInputVector().IsZero())
 		{
 			// Stop as soon as possible if no movement input - so the character doesn't "glide" to a stop after a roll.
 			GetMovementComponent()->ConsumeInputVector();
-		}else
+		}
+		else
 		{
 			// Hack, exceed the speed limit to ensure they are running after roll, it feels nicer
-			GetMovementComponent()->Velocity = VelocityBeforeRoll + 20; 
+			GetMovementComponent()->Velocity = VelocityBeforeRoll + 20;
 			GetMovementComponent()->UpdateComponentVelocity();
 		}
-		
 	}
+	/**
+	 * End IFrames
+	 */
 	else if (NotifyName == "ANS_IFramesAnimNotifyState")
 	{
-		UE_LOG(LogActor, Log, TEXT("IFrames ended"));
+		// TODO Hack: Assuming body material is first material on mannequin.
+		if (const auto Material = GetMesh()->GetMaterials()[0])
+		{
+			GetMesh()->CreateDynamicMaterialInstance(0, Material)->SetVectorParameterValue("BodyColor", BodyColorBeforeRoll);
+		}
 	}
 }
 
