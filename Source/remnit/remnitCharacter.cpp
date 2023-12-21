@@ -13,6 +13,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "LockOnComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -30,17 +31,20 @@ ARemnitCharacter::ARemnitCharacter()
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); // ...at this rotation rate
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	//GetCharacterMovement()->bUseControllerDesiredRotation = false;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f); 
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
-	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
+	GetCharacterMovement()->MinAnalogWalkSpeed = 500.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
+	GetCharacterMovement()->BrakingFrictionFactor = 5;
+	
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -75,6 +79,10 @@ void ARemnitCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	CameraBoom->bUsePawnControlRotation = true; 
+	FollowCamera->bUsePawnControlRotation = false;
 }
 
 
@@ -104,14 +112,21 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::Move);
 
+		// Looking
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::Look);
+		
 		// Dodging
 		if(const auto DodgeRollComponent = GetComponentByClass<UDodgeRollComponent>())
 		{
 			EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Triggered, DodgeRollComponent, &UDodgeRollComponent::TryRoll);
 		}
+		
+		// Lock On
+		if(const auto LockonComponent = GetComponentByClass<ULockOnComponent>())
+		{
+			EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Triggered, LockonComponent, &ULockOnComponent::ToggleLockOn);
+		}
 
-		// Looking
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::Look);
 	}
 	else
 	{
@@ -139,9 +154,10 @@ void ARemnitCharacter::Move(const FInputActionValue& Value)
 		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-		// add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
+		// add movement
+		AddMovementInput(ForwardDirection * 20, MovementVector.Y);
+		AddMovementInput(RightDirection * 20, MovementVector.X);
+		
 	}
 }
 
