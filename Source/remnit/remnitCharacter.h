@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ANS_GenericAnimStateNotifier.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "remnitCharacter.generated.h"
@@ -15,23 +16,8 @@ struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
-UINTERFACE(MinimalAPI)
-class UAnimStateListener : public UInterface
-{
-	GENERATED_BODY()
-};
-
-class IAnimStateListener
-{
-	GENERATED_BODY()
-
-public:
-	virtual void OnNotifyBegin(const FName NotifyName) {}
-	virtual void OnNotifyEnd(const FName NotifyName) {}
-};
-
 UCLASS(config=Game)
-class ARemnitCharacter : public ACharacter, public IAnimStateListener
+class ARemnitCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -67,33 +53,13 @@ class ARemnitCharacter : public ACharacter, public IAnimStateListener
 	UInputAction* RollAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* RollForwardMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* RollBackMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* RollLeftMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* RollRightMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* SwordAttackAMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
-	float RollSpeed = 5.0;
 
 public:
 	ARemnitCharacter();
 
 	//UFUNCTION()
 	//void StartIFrames();
-
-	UFUNCTION()
-	virtual void OnNotifyBegin(const FName NotifyName) override;
-	UFUNCTION()
-	virtual void OnNotifyEnd(const FName NotifyName) override;
 
 protected:
 	/** Called for movement input */
@@ -103,7 +69,7 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	void SwingSwordMedium();
-	void TryRoll();
+	
 
 protected:
 	UPROPERTY(BlueprintReadWrite)
@@ -111,14 +77,6 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bShouldSwingSwordMedium;
-
-	UPROPERTY(BlueprintReadOnly)
-	bool bIsRolling;
-
-	UPROPERTY(BlueprintReadOnly)
-	FVector RollDirection;
-	FVector VelocityBeforeRoll;
-	FLinearColor BodyColorBeforeRoll;
 
 protected:
 	// APawn interface

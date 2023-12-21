@@ -3,6 +3,7 @@
 #include "remnitCharacter.h"
 
 #include "ComponentReregisterContext.h"
+#include "DodgeRollComponent.h"
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -86,29 +87,7 @@ void ARemnitCharacter::SwingSwordMedium()
 	}
 }
 
-void ARemnitCharacter::TryRoll()
-{
-	if (bIsRolling || GetCharacterMovement()->IsFalling())
-	{
-		return;
-	}
 
-	// Get current movement vector relative to player
-	// Set movement speed in that vector 
-	// Play appropriate roll animation (direction)
-	// during roll: update movement speed to remain constant every Tick
-	// set IFrames
-	// after roll: stop setting movement vector
-	// 
-
-	if (const auto Duration = PlayAnimMontage(RollForwardMontage, 1.25); Duration == 0.)
-	{
-		UE_LOG(LogActorComponent, Error, TEXT("Failed to execute roll action; bailing"));
-		bIsRolling = false;
-	}
-
-	// If the animation plays, it will start when the ANS_AnimRunning state triggers
-}
 
 void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -126,7 +105,10 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::Move);
 
 		// Dodging
-		EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::TryRoll);
+		if(const auto DodgeRollComponent = GetComponentByClass<UDodgeRollComponent>())
+		{
+			EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Triggered, DodgeRollComponent, &UDodgeRollComponent::TryRoll);
+		}
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::Look);
@@ -137,77 +119,6 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		       TEXT(
 			       "'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."
 		       ), *GetNameSafe(this));
-	}
-}
-
-void ARemnitCharacter::OnNotifyBegin(const FName NotifyName)
-{
-	/**
-	 * Start Rolling
-	 */
-	if (NotifyName == "ANS_AnimRunning")
-	{
-		VelocityBeforeRoll = GetCharacterMovement()->GetLastUpdateVelocity();
-		RollDirection = GetCharacterMovement()->GetLastUpdateVelocity();
-		// Roll forward if character was standing still
-		if (RollDirection.IsZero())
-		{
-			RollDirection = GetTransform().GetRotation().GetForwardVector();
-		}
-		RollDirection.Normalize();
-		bIsRolling = true;
-	}
-	/**
-	 * Start IFrames
-	 */
-	else if (NotifyName == "ANS_IFramesAnimNotifyState")
-	{
-		// TODO Hack: Assuming body material is first material on mannequin.
-		if (const auto Material = GetMesh()->GetMaterials()[0])
-		{
-			TArray<FMaterialParameterInfo> OutParameterInfo;
-			TArray<FGuid> OutParameterIds;
-			Material->GetAllVectorParameterInfo(OutParameterInfo, OutParameterIds);
-			for (int i = 0; i < OutParameterInfo.Num(); ++i)
-			{
-				if(OutParameterInfo[i].Name == "BodyColor")
-				{
-					Material->GetVectorParameterValue(OutParameterInfo[i], BodyColorBeforeRoll);
-					GetMesh()->CreateDynamicMaterialInstance(0, Material)->SetVectorParameterValue("BodyColor", FLinearColor::Green);
-				}
-			}
-		}
-	}
-}
-
-void ARemnitCharacter::OnNotifyEnd(const FName NotifyName)
-{
-	if (NotifyName == "ANS_AnimRunning" && bIsRolling)
-	{
-		bIsRolling = false;
-
-		if (GetMovementComponent()->GetLastInputVector().IsZero())
-		{
-			// Stop as soon as possible if no movement input - so the character doesn't "glide" to a stop after a roll.
-			GetMovementComponent()->ConsumeInputVector();
-		}
-		else
-		{
-			// Hack, exceed the speed limit to ensure they are running after roll, it feels nicer
-			GetMovementComponent()->Velocity = VelocityBeforeRoll + 20;
-			GetMovementComponent()->UpdateComponentVelocity();
-		}
-	}
-	/**
-	 * End IFrames
-	 */
-	else if (NotifyName == "ANS_IFramesAnimNotifyState")
-	{
-		// TODO Hack: Assuming body material is first material on mannequin.
-		if (const auto Material = GetMesh()->GetMaterials()[0])
-		{
-			GetMesh()->CreateDynamicMaterialInstance(0, Material)->SetVectorParameterValue("BodyColor", BodyColorBeforeRoll);
-		}
 	}
 }
 
@@ -249,10 +160,7 @@ void ARemnitCharacter::Look(const FInputActionValue& Value)
 
 void ARemnitCharacter::Tick(float DeltaSeconds)
 {
-	if (bIsRolling)
-	{
-		SetActorLocation(GetActorLocation() + RollDirection * RollSpeed, true);
-	}
+
 }
 
 // void ARemnitCharacter::AnimNotify_StartIFrames()

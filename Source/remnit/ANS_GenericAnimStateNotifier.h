@@ -6,6 +6,21 @@
 #include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "ANS_GenericAnimStateNotifier.generated.h"
 
+UINTERFACE(MinimalAPI)
+class UAnimStateListener : public UInterface
+{
+	GENERATED_BODY()
+};
+
+class IAnimStateListener
+{
+	GENERATED_BODY()
+
+public:
+	virtual bool OnNotifyBegin(const FName NotifyName) { return false; }
+	virtual bool OnNotifyEnd(const FName NotifyName) { return false; }
+};
+
 /**
  * 
  */

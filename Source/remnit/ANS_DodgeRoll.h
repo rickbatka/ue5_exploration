@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "ANS_GenericAnimStateNotifier.h"
-#include "ANS_AnimRunning.generated.h"
+#include "Animation/AnimNotifies/AnimNotifyState.h"
+#include "ANS_DodgeRoll.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class REMNIT_API UANS_AnimRunning : public UANS_GenericAnimStateNotifier
+class REMNIT_API UANS_DodgeRoll : public UANS_GenericAnimStateNotifier
 {
 	GENERATED_BODY()
 };
