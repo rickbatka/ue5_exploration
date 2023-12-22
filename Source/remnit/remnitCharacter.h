@@ -3,11 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ANS_GenericAnimStateNotifier.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "remnitCharacter.generated.h"
 
+class ULockOnComponent;
+class UDodgeRollComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -61,6 +62,8 @@ class ARemnitCharacter : public ACharacter
 public:
 	ARemnitCharacter();
 
+	bool GetIsRolling() const;
+
 	//UFUNCTION()
 	//void StartIFrames();
 
@@ -72,16 +75,16 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	void SwingSwordMedium();
-	
 
-protected:
+	UDodgeRollComponent* DodgeRollComponent;
+	ULockOnComponent* LockOnComponent;
+	
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsSwingingSword;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bShouldSwingSwordMedium;
 
-protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -89,8 +92,6 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaSeconds) override;
-
-	FTimerHandle RollingAnimationTimerHandle;
 
 public:
 	/** Returns CameraBoom subobject **/

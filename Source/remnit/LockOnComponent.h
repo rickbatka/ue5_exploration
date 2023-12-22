@@ -7,6 +7,8 @@
 #include "LockOnComponent.generated.h"
 
 
+class ARemnitCharacter;
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class REMNIT_API ULockOnComponent : public UActorComponent
 {
@@ -19,10 +21,19 @@ public:
 	bool bIsLockedOn;
 	AActor* Target;
 
+	UPROPERTY(EditAnywhere, Category = Input)
+	float ToggleCooldownSec = 0.5;
+	
+	/**
+	 * 
+	 */
+	bool bIsToggleOnCooldown;
+
 protected:
-	ACharacter* Character;
+	ARemnitCharacter* Character;
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	void PreventToggleForCooldownDuration();
 
 public:
 	void ToggleLockOn();

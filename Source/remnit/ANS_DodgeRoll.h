@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "ANS_GenericAnimStateNotifier.h"
-#include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "ANS_DodgeRoll.generated.h"
 
 /**

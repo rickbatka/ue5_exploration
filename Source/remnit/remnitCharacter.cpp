@@ -40,7 +40,7 @@ ARemnitCharacter::ARemnitCharacter()
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
-	GetCharacterMovement()->MinAnalogWalkSpeed = 500.f;
+	GetCharacterMovement()->MinAnalogWalkSpeed = 50.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
 	GetCharacterMovement()->BrakingFrictionFactor = 5;
@@ -59,6 +59,15 @@ ARemnitCharacter::ARemnitCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+}
+
+bool ARemnitCharacter::GetIsRolling() const
+{
+	if(DodgeRollComponent && DodgeRollComponent->bIsRolling)
+	{
+		return true;
+	}
+	return false;
 }
 
 //void AremnitCharacter::StartIFrames()
@@ -99,6 +108,9 @@ void ARemnitCharacter::SwingSwordMedium()
 
 void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
+	DodgeRollComponent = GetComponentByClass<UDodgeRollComponent>();
+	LockOnComponent = GetComponentByClass<ULockOnComponent>();
+	
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
@@ -116,15 +128,15 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::Look);
 		
 		// Dodging
-		if(const auto DodgeRollComponent = GetComponentByClass<UDodgeRollComponent>())
+		if(DodgeRollComponent)
 		{
 			EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Triggered, DodgeRollComponent, &UDodgeRollComponent::TryRoll);
 		}
-		
+
 		// Lock On
-		if(const auto LockonComponent = GetComponentByClass<ULockOnComponent>())
+		if(LockOnComponent)
 		{
-			EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Triggered, LockonComponent, &ULockOnComponent::ToggleLockOn);
+			EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Triggered, LockOnComponent, &ULockOnComponent::ToggleLockOn);
 		}
 
 	}

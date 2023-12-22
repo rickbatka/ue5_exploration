@@ -6,7 +6,6 @@
 #include "ComponentReregisterContext.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Kismet/KismetMathLibrary.h"
 
 
 bool UDodgeRollComponent::OnNotifyBegin(const FName NotifyName)
@@ -26,6 +25,7 @@ bool UDodgeRollComponent::OnNotifyBegin(const FName NotifyName)
 		}
 		RollDirection.Normalize();
 		bIsRolling = true;
+		Character->Controller->SetIgnoreMoveInput(true);
 		return true;
 	}
 	/**
@@ -62,7 +62,7 @@ bool UDodgeRollComponent::OnNotifyEnd(const FName NotifyName)
 	if (NotifyName == "ANS_DodgeRoll" && bIsRolling)
 	{
 		bIsRolling = false;
-
+		Character->Controller->ResetIgnoreMoveInput();
 		if (Character->GetMovementComponent()->GetLastInputVector().IsZero())
 		{
 			// Stop as soon as possible if no movement input - so the character doesn't "glide" to a stop after a roll.
@@ -139,6 +139,7 @@ void UDodgeRollComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 	if (bIsRolling)
 	{
+		
 		Character->ConsumeMovementInputVector();
 		Character->SetActorLocation(Character->GetActorLocation() + RollDirection * RollSpeed, true);
 		Character->SetActorRotation(RollDirection.ToOrientationRotator());

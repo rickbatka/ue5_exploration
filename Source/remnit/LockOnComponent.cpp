@@ -3,12 +3,13 @@
 
 #include "LockOnComponent.h"
 
+#include "AITestsCommon.h"
+#include "AITestsCommon.h"
 #include "ComponentReregisterContext.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
-
+#include "remnitCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values for this component's properties
 ULockOnComponent::ULockOnComponent()
@@ -25,7 +26,7 @@ ULockOnComponent::ULockOnComponent()
 void ULockOnComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	Character = GetOwner<ACharacter>();
+	Character = GetOwner<ARemnitCharacter>();
 	if (!Character)
 	{
 		UE_LOG(LogActorComponent, Error, TEXT("Lock On component can only be attached to ACharacters!"));
@@ -33,24 +34,40 @@ void ULockOnComponent::BeginPlay()
 	}
 	bIsLockedOn = false;
 	//Character->GetCharacterMovement()->bUseControllerDesiredRotation = true;
-	
+}
+
+void ULockOnComponent::PreventToggleForCooldownDuration()
+{
+	bIsToggleOnCooldown = true;
+	FTimerHandle InOutTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(InOutTimerHandle, [&]()
+	{
+		bIsToggleOnCooldown = false;
+	}, 1, false, ToggleCooldownSec);
 }
 
 void ULockOnComponent::ToggleLockOn()
 {
-	if(bIsLockedOn)
+	if(bIsToggleOnCooldown)
 	{
-		RemoveLock();
 		return;
 	}
 	
+	if (bIsLockedOn)
+	{
+		RemoveLock();
+		PreventToggleForCooldownDuration();
+		return;
+	}
+
 	TArray<AActor*> OutFoundLockOnTargets;
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), "LOCK", OutFoundLockOnTargets);
-	if(OutFoundLockOnTargets.Num() == 0)
+	if (OutFoundLockOnTargets.Num() == 0)
 	{
 		return;
 	}
 	SetLock(OutFoundLockOnTargets[0]);
+	PreventToggleForCooldownDuration();
 }
 
 void ULockOnComponent::RemoveLock()
@@ -61,15 +78,12 @@ void ULockOnComponent::RemoveLock()
 
 void ULockOnComponent::SetLock(AActor* NewTarget)
 {
-	if(!NewTarget)
+	if (!NewTarget)
 	{
 		return;
 	}
 	this->Target = NewTarget;
 	bIsLockedOn = true;
-	
-	// TODO RICK editing ABP_Remnit1,
-	// // Trying to get directiopn / rotation into blendspace
 }
 
 
@@ -79,14 +93,13 @@ void ULockOnComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// In case our target was destroyed
-	if(bIsLockedOn && !Target)
+	if (bIsLockedOn && !Target)
 	{
 		RemoveLock();
 	}
-	
-	if(bIsLockedOn && Target)
+
+	if (bIsLockedOn && Target && !Character->GetIsRolling())
 	{
-		GetOwner()->SetActorRotation(UKismetMathLibrary::FindLookAtRotation(Character->GetActorLocation(), Target->GetActorLocation()));
+		GetOwner()->SetActorRotation(FRotator(0, UKismetMathLibrary::FindLookAtRotation(Character->GetActorLocation(), Target->GetActorLocation()).Yaw, 0));
 	}
 }
-
