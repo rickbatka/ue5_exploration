@@ -68,7 +68,8 @@ void ULockOnComponent::SetLock(AActor* NewTarget)
 	this->Target = NewTarget;
 	bIsLockedOn = true;
 	
-	
+	// TODO RICK editing ABP_Remnit1,
+	// // Trying to get directiopn / rotation into blendspace
 }
 
 

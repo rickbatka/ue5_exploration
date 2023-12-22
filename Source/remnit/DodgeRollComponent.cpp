@@ -6,6 +6,7 @@
 #include "ComponentReregisterContext.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 
 bool UDodgeRollComponent::OnNotifyBegin(const FName NotifyName)
@@ -25,7 +26,6 @@ bool UDodgeRollComponent::OnNotifyBegin(const FName NotifyName)
 		}
 		RollDirection.Normalize();
 		bIsRolling = true;
-		Character->GetCharacterMovement()->DisableMovement();
 		return true;
 	}
 	/**
@@ -75,7 +75,6 @@ bool UDodgeRollComponent::OnNotifyEnd(const FName NotifyName)
 			Character->GetMovementComponent()->UpdateComponentVelocity();
 		}
 
-		Character->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		return true;
 	}
 
@@ -142,5 +141,6 @@ void UDodgeRollComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	{
 		Character->ConsumeMovementInputVector();
 		Character->SetActorLocation(Character->GetActorLocation() + RollDirection * RollSpeed, true);
+		Character->SetActorRotation(RollDirection.ToOrientationRotator());
 	}
 }
