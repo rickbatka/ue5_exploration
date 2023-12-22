@@ -17,6 +17,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	float RollSpeed = 10.0;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Movement)
+	float WalkSpeed = 600.0;
+	
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsRolling = false;
 

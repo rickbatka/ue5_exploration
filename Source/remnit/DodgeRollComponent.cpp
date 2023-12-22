@@ -25,7 +25,8 @@ bool UDodgeRollComponent::OnNotifyBegin(const FName NotifyName)
 		}
 		RollDirection.Normalize();
 		bIsRolling = true;
-		Character->Controller->SetIgnoreMoveInput(true);
+		Character->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed * 2;
+		//Character->Controller->SetIgnoreMoveInput(true);
 		return true;
 	}
 	/**
@@ -62,18 +63,9 @@ bool UDodgeRollComponent::OnNotifyEnd(const FName NotifyName)
 	if (NotifyName == "ANS_DodgeRoll" && bIsRolling)
 	{
 		bIsRolling = false;
-		Character->Controller->ResetIgnoreMoveInput();
-		if (Character->GetMovementComponent()->GetLastInputVector().IsZero())
-		{
-			// Stop as soon as possible if no movement input - so the character doesn't "glide" to a stop after a roll.
-			Character->GetMovementComponent()->ConsumeInputVector();
-		}
-		else
-		{
-			// Hack, exceed the speed limit to ensure they are running after roll, it feels nicer
-			Character->GetMovementComponent()->Velocity = VelocityBeforeRoll + 20;
-			Character->GetMovementComponent()->UpdateComponentVelocity();
-		}
+		Character->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+		//Character->Controller->ResetIgnoreMoveInput();
+		// TODO determine if we should stop
 
 		return true;
 	}
@@ -128,7 +120,9 @@ void UDodgeRollComponent::BeginPlay()
 		UE_LOG(LogActorComponent, Error, TEXT("Dodge Roll component can only be attached to ACharacters!"));
 		UActorComponent::DestroyComponent();
 	}
-}
+
+}	
+
 
 
 // Called every frame
@@ -139,9 +133,8 @@ void UDodgeRollComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 
 	if (bIsRolling)
 	{
-		
-		Character->ConsumeMovementInputVector();
-		Character->SetActorLocation(Character->GetActorLocation() + RollDirection * RollSpeed, true);
+		// Character->ConsumeMovementInputVector();
+		Character->AddMovementInput(RollDirection, RollSpeed);
 		Character->SetActorRotation(RollDirection.ToOrientationRotator());
 	}
 }

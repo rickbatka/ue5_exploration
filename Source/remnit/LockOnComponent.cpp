@@ -33,7 +33,6 @@ void ULockOnComponent::BeginPlay()
 		UActorComponent::DestroyComponent();
 	}
 	bIsLockedOn = false;
-	//Character->GetCharacterMovement()->bUseControllerDesiredRotation = true;
 }
 
 void ULockOnComponent::PreventToggleForCooldownDuration()
