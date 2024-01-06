@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "remnitCharacter.generated.h"
 
+class UWeaponSM;
 class ULockOnComponent;
 class UDodgeRollComponent;
 class USpringArmComponent;
@@ -59,6 +60,8 @@ class ARemnitCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* SwordAttackAMontage;
 
+	USkeletalMeshSocket* WeaponSocketR;
+	USkeletalMeshSocket* WeaponSocketL;
 public:
 	ARemnitCharacter();
 
@@ -78,12 +81,10 @@ protected:
 
 	UDodgeRollComponent* DodgeRollComponent;
 	ULockOnComponent* LockOnComponent;
+	UWeaponSM* WeaponComponent;
 	
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsSwingingSword;
-
-	UPROPERTY(BlueprintReadOnly)
-	bool bShouldSwingSwordMedium;
 
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

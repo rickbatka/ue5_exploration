@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ANS_GenericAnimStateNotifier.h"
+#include "AnimNotifyStates/ANS_GenericAnimStateNotifier.h"
 #include "Components/ActorComponent.h"
 #include "DodgeRollComponent.generated.h"
 
@@ -30,8 +30,8 @@ public:
 
 	// Sets default values for this component's properties
 	UDodgeRollComponent();
-	virtual bool OnNotifyBegin(const FName NotifyName) override;
-	virtual bool OnNotifyEnd(const FName NotifyName) override;
+	virtual bool OnNotifyBegin(const FName NotifyName, UAnimSequenceBase* Animation) override;
+	virtual bool OnNotifyEnd(const FName NotifyName, UAnimSequenceBase* Animation) override;
 	void TryRoll();
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

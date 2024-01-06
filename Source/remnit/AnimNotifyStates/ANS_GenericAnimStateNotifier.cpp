@@ -3,23 +3,24 @@
 
 #include "ANS_GenericAnimStateNotifier.h"
 
-#include "remnitCharacter.h"
-
 void UANS_GenericAnimStateNotifier::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
 	const auto OwningActor = MeshComp->GetOwner();
+	
 	if (!OwningActor)
 	{
 		return;
 	}
+	
 	for (const auto Component : OwningActor->GetComponents())
 	{
 		if (IAnimStateListener* AnimStateHandler = Cast<IAnimStateListener>(Component))
 		{
+			
 			/**
 			 * Give the component a chance to handle it, and if it does, stop propagating the event.
 			 */
-			if (AnimStateHandler->OnNotifyBegin(EventReference.GetNotify()->NotifyName))
+			if (AnimStateHandler->OnNotifyBegin(EventReference.GetNotify()->NotifyName, Animation))
 			{
 				return;
 			}
@@ -31,7 +32,7 @@ void UANS_GenericAnimStateNotifier::NotifyBegin(USkeletalMeshComponent* MeshComp
 	 */
 	if (IAnimStateListener* AnimOwner = Cast<IAnimStateListener>(OwningActor))
 	{
-		AnimOwner->OnNotifyBegin(EventReference.GetNotify()->NotifyName);
+		AnimOwner->OnNotifyBegin(EventReference.GetNotify()->NotifyName, Animation);
 	}
 }
 
@@ -50,7 +51,7 @@ void UANS_GenericAnimStateNotifier::NotifyEnd(USkeletalMeshComponent* MeshComp, 
 			/**
 			 * Give the component a chance to handle it, and if it does, stop propagating the event.
 			 */
-			if (AnimStateHandler->OnNotifyEnd(EventReference.GetNotify()->NotifyName))
+			if (AnimStateHandler->OnNotifyEnd(EventReference.GetNotify()->NotifyName, Animation))
 			{
 				return;
 			}
@@ -62,6 +63,6 @@ void UANS_GenericAnimStateNotifier::NotifyEnd(USkeletalMeshComponent* MeshComp, 
 	 */
 	if (IAnimStateListener* AnimOwner = Cast<IAnimStateListener>(OwningActor))
 	{
-		AnimOwner->OnNotifyEnd(EventReference.GetNotify()->NotifyName);
+		AnimOwner->OnNotifyEnd(EventReference.GetNotify()->NotifyName, Animation);
 	}
 }

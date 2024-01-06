@@ -17,8 +17,8 @@ class IAnimStateListener
 	GENERATED_BODY()
 
 public:
-	virtual bool OnNotifyBegin(const FName NotifyName) { return false; }
-	virtual bool OnNotifyEnd(const FName NotifyName) { return false; }
+	virtual bool OnNotifyBegin(const FName NotifyName, UAnimSequenceBase* Animation) { return false; }
+	virtual bool OnNotifyEnd(const FName NotifyName, UAnimSequenceBase* Animation) { return false; }
 };
 
 /**

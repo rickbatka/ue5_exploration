@@ -8,7 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 
 
-bool UDodgeRollComponent::OnNotifyBegin(const FName NotifyName)
+bool UDodgeRollComponent::OnNotifyBegin(const FName NotifyName, UAnimSequenceBase* Animation)
 {
 	if (!Character) { return false; }
 	/**
@@ -54,7 +54,7 @@ bool UDodgeRollComponent::OnNotifyBegin(const FName NotifyName)
 	return false;
 }
 
-bool UDodgeRollComponent::OnNotifyEnd(const FName NotifyName)
+bool UDodgeRollComponent::OnNotifyEnd(const FName NotifyName, UAnimSequenceBase* Animation)
 {
 	if (!Character) { return false; }
 	/**

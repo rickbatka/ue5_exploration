@@ -14,6 +14,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "LockOnComponent.h"
+#include "WeaponSM.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -92,12 +94,23 @@ void ARemnitCharacter::BeginPlay()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	CameraBoom->bUsePawnControlRotation = true; 
 	FollowCamera->bUsePawnControlRotation = false;
+
+	WeaponSocketR = GetMesh()->SkeletalMesh->FindSocket(FName("Weapon_R"));
+	WeaponSocketL = GetMesh()->SkeletalMesh->FindSocket(FName("Weapon_L"));
+	if(!WeaponSocketR || !WeaponSocketL)
+	{
+		UE_LOG(LogActor, Error, TEXT("Failed to find weapon socket!"));
+	}
+
+	if(WeaponSocketR)
+	{
+		//GetComponentByClass<UWeaponComponent>().ren
+	}
 }
 
 
 void ARemnitCharacter::SwingSwordMedium()
 {
-	bShouldSwingSwordMedium = true;
 	if (!GetCharacterMovement()->IsFalling())
 	{
 		PlayAnimMontage(SwordAttackAMontage);
@@ -110,6 +123,7 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	DodgeRollComponent = GetComponentByClass<UDodgeRollComponent>();
 	LockOnComponent = GetComponentByClass<ULockOnComponent>();
+	WeaponComponent = GetComponentByClass<UWeaponSM>();
 	
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
@@ -119,7 +133,7 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		// Attacking
-		EnhancedInputComponent->BindAction(SwordMediumAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::SwingSwordMedium);
+		// EnhancedInputComponent->BindAction(SwordMediumAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::SwingSwordMedium);
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::Move);
@@ -137,6 +151,11 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		if(LockOnComponent)
 		{
 			EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Triggered, LockOnComponent, &ULockOnComponent::ToggleLockOn);
+		}
+
+		if(WeaponComponent)
+		{
+			EnhancedInputComponent->BindAction(SwordMediumAction, ETriggerEvent::Triggered, WeaponComponent, &UWeaponSM::TryAttack);
 		}
 
 	}
