@@ -4,6 +4,7 @@
 #include "DodgeRollComponent.h"
 
 #include "ComponentReregisterContext.h"
+#include "remnitCharacter.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -11,24 +12,7 @@
 bool UDodgeRollComponent::OnNotifyBegin(const FName NotifyName, UAnimSequenceBase* Animation)
 {
 	if (!Character) { return false; }
-	/**
-	 * Start Rolling
-	 */
-	if (NotifyName == "ANS_DodgeRoll")
-	{
-		VelocityBeforeRoll = Character->GetCharacterMovement()->GetLastUpdateVelocity();
-		RollDirection = Character->GetCharacterMovement()->GetLastUpdateVelocity();
-		// Roll forward if character was standing still
-		if (RollDirection.IsZero())
-		{
-			RollDirection = Character->GetTransform().GetRotation().GetForwardVector();
-		}
-		RollDirection.Normalize();
-		bIsRolling = true;
-		Character->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed * 2;
-		//Character->Controller->SetIgnoreMoveInput(true);
-		return true;
-	}
+	
 	/**
 	 * Start IFrames
 	 */
@@ -87,11 +71,28 @@ bool UDodgeRollComponent::OnNotifyEnd(const FName NotifyName, UAnimSequenceBase*
 
 void UDodgeRollComponent::TryRoll()
 {
-	if (!Character || bIsRolling || Character->GetCharacterMovement()->IsFalling())
+	if (!Character || bIsRolling || Character->GetCharacterMovement()->IsFalling() || Character->GetIsLockedAttacking())
 	{
 		return;
 	}
 
+	/**
+	 * Start Rolling
+	 */
+	VelocityBeforeRoll = Character->GetCharacterMovement()->GetLastUpdateVelocity();
+	// TODO: Read input axis instead of using last update velocity, to see where they actually WANT to roll right now.
+	RollDirection = Character->GetCharacterMovement()->GetLastUpdateVelocity();
+	
+	// Roll forward if character was standing still
+	if (RollDirection.IsZero())
+	{
+		RollDirection = Character->GetTransform().GetRotation().GetForwardVector();
+	}
+	RollDirection.Normalize();
+	bIsRolling = true;
+	Character->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed * 2;
+
+	//Character->Controller->SetIgnoreMoveInput(true);
 	if (const auto Duration = Character->PlayAnimMontage(RollForwardMontage, 1.25); Duration == 0.)
 	{
 		UE_LOG(LogActorComponent, Error, TEXT("Failed to play RollForwardMontage; bailing"));
@@ -114,10 +115,10 @@ UDodgeRollComponent::UDodgeRollComponent()
 void UDodgeRollComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	Character = GetOwner<ACharacter>();
+	Character = GetOwner<ARemnitCharacter>();
 	if (!Character)
 	{
-		UE_LOG(LogActorComponent, Error, TEXT("Dodge Roll component can only be attached to ACharacters!"));
+		UE_VLOG_UELOG(Character, LogActorComponent, Error, TEXT("Dodge Roll component can only be attached to ACharacters!"));
 		UActorComponent::DestroyComponent();
 	}
 

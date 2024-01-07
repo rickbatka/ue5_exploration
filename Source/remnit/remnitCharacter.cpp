@@ -65,11 +65,12 @@ ARemnitCharacter::ARemnitCharacter()
 
 bool ARemnitCharacter::GetIsRolling() const
 {
-	if(DodgeRollComponent && DodgeRollComponent->bIsRolling)
-	{
-		return true;
-	}
-	return false;
+	return DodgeRollComponent && DodgeRollComponent->bIsRolling;
+}
+
+bool ARemnitCharacter::GetIsLockedAttacking() const
+{
+	return WeaponComponent && WeaponComponent->IsLockedAttacking();
 }
 
 //void AremnitCharacter::StartIFrames()
@@ -170,26 +171,29 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 void ARemnitCharacter::Move(const FInputActionValue& Value)
 {
+	if(!Controller || GetIsRolling())
+	{
+		return;
+	}
+	
 	// input is a Vector2D
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 
-	if (Controller != nullptr && !GetIsRolling())
-	{
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-		// get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		// add movement
-		AddMovementInput(ForwardDirection * 20, MovementVector.Y);
-		AddMovementInput(RightDirection * 20, MovementVector.X);
-		
-	}
+	// Rotation: Exactly where the camera is pointed. Ignores where the actor is looking.
+	const FRotator Rotation = Controller->GetControlRotation();
+	//UKismetSystemLibrary::DrawDebugBox(this, GetActorLocation() + FVector{0, 100, 0}, FVector{100}, FLinearColor::Red, Rotation);
+	
+	// Remove pitch and roll from rotation.
+	const FRotator YawRotation(0, Rotation.Yaw, 0);
+	
+	// get forward vector
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	// get right vector 
+	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	
+	// add movement
+	AddMovementInput(ForwardDirection * 20, MovementVector.Y);
+	AddMovementInput(RightDirection * 20, MovementVector.X);
 }
 
 void ARemnitCharacter::Look(const FInputActionValue& Value)

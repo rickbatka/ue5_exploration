@@ -8,6 +8,8 @@
 #include "DodgeRollComponent.generated.h"
 
 
+class ARemnitCharacter;
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class REMNIT_API UDodgeRollComponent : public UActorComponent, public IAnimStateListener
 {
@@ -37,7 +39,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 protected:
-	ACharacter* Character;
+	ARemnitCharacter* Character;
 	// Called when the game starts
 	virtual void BeginPlay() override;
 

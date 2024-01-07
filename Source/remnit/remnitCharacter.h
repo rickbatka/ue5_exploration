@@ -66,6 +66,7 @@ public:
 	ARemnitCharacter();
 
 	bool GetIsRolling() const;
+	bool GetIsLockedAttacking() const;
 
 	//UFUNCTION()
 	//void StartIFrames();

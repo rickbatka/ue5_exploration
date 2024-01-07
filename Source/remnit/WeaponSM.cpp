@@ -4,6 +4,7 @@
 #include "WeaponSM.h"
 
 #include "ComponentReregisterContext.h"
+#include "remnitCharacter.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -14,13 +15,7 @@ bool UWeaponSM::OnNotifyBegin(const FName NotifyName, UAnimSequenceBase* Animati
 		return false;
 	}
 
-	const auto Montage = Cast<UAnimMontage>(Animation);
-	if(!Montage)
-	{
-		return false;
-	}
-
-	if(Montage != CurrentPlayingMontage)
+	if (const auto Montage = Cast<UAnimMontage>(Animation); !Montage || Montage != CurrentPlayingMontage)
 	{
 		// Important! Ignore events for abandoned montage sequences.
 		return false;
@@ -29,7 +24,7 @@ bool UWeaponSM::OnNotifyBegin(const FName NotifyName, UAnimSequenceBase* Animati
 	if (NotifyName == "ANS_ComboWindowOpen")
 	{
 		bIsComboWindowOpen = true;
-		UE_LOG(LogActor, Error, TEXT("Combo Window %d"), bIsComboWindowOpen);
+		UE_VLOG_UELOG(Character, LogActor, Error, TEXT("Combo Window %d"), bIsComboWindowOpen);
 		return true;
 	}
 	return false;
@@ -38,22 +33,16 @@ bool UWeaponSM::OnNotifyBegin(const FName NotifyName, UAnimSequenceBase* Animati
 bool UWeaponSM::OnNotifyEnd(const FName NotifyName, UAnimSequenceBase* Animation)
 {
 	if (!Character) { return false; }
-	const auto Montage = Cast<UAnimMontage>(Animation);
-	if(!Montage)
-	{
-		return false;
-	}
-
-	if(Montage != CurrentPlayingMontage)
+	if (const auto Montage = Cast<UAnimMontage>(Animation); !Montage || Montage != CurrentPlayingMontage)
 	{
 		// Important! Ignore events for abandoned montage sequences.
 		return false;
 	}
-	
+
 	if (NotifyName == "ANS_ComboWindowOpen")
 	{
 		bIsComboWindowOpen = false;
-		UE_LOG(LogActor, Error, TEXT("Combo Window %d"), bIsComboWindowOpen);
+		UE_VLOG_UELOG(Character, LogActor, Error, TEXT("Combo Window %d"), bIsComboWindowOpen);
 		return true;
 	}
 
@@ -62,21 +51,21 @@ bool UWeaponSM::OnNotifyEnd(const FName NotifyName, UAnimSequenceBase* Animation
 	 */
 	if (NotifyName == "ANS_AttackAnim")
 	{
-		UE_LOG(LogActor, Error, TEXT("ANS_AttackAnim END"));
+		UE_VLOG_UELOG(Character, LogActor, Error, TEXT("ANS_AttackAnim END"));
 
 		EndCurrentAttack();
 		// An attack fully finished without being preempted by a combo; reset to the beginning attack again.
 		AttackIndex = 0;
 		return true;
 	}
-	
+
 	return false;
 }
 
 void UWeaponSM::BeginAttack()
 {
 	//Character->StopAnimMontage(nullptr);
-	UE_LOG(LogActor, Error, TEXT("Entering attack %d"), AttackIndex);
+	UE_VLOG_UELOG(Character, LogActor, Error, TEXT("Entering attack %d"), AttackIndex);
 	CurrentPlayingMontage = AttackMontages[AttackIndex];
 	Character->PlayAnimMontage(AttackMontages[AttackIndex]);
 	bIsAttacking = true;
@@ -85,7 +74,7 @@ void UWeaponSM::BeginAttack()
 
 void UWeaponSM::EndCurrentAttack()
 {
-	UE_LOG(LogActor, Error, TEXT("EndCurrentAttack"));
+	UE_VLOG_UELOG(Character, LogActor, Error, TEXT("EndCurrentAttack"));
 	bIsAttacking = false;
 	bIsComboWindowOpen = false;
 	CurrentPlayingMontage = nullptr;
@@ -99,7 +88,7 @@ void UWeaponSM::EndCurrentAttack()
 void UWeaponSM::BeginPlay()
 {
 	Super::BeginPlay();
-	Character = GetOwner<ACharacter>();
+	Character = GetOwner<ARemnitCharacter>();
 	if (!Character)
 	{
 		UE_LOG(LogActorComponent, Error, TEXT("Weapon component can only be attached to ACharacters!"));
@@ -109,7 +98,7 @@ void UWeaponSM::BeginPlay()
 
 void UWeaponSM::TryAttack()
 {
-	if ((bIsAttacking && !bIsComboWindowOpen) || Character->GetCharacterMovement()->IsFalling())
+	if (Character->GetCharacterMovement()->IsFalling() || Character->GetIsRolling() || (bIsAttacking && !bIsComboWindowOpen))
 	{
 		return;
 	}
@@ -118,11 +107,14 @@ void UWeaponSM::TryAttack()
 	{
 		EndCurrentAttack();
 	}
+	
+	BeginAttack();
+	
+}
 
-	if (!bIsAttacking)
-	{
-		BeginAttack();
-	}
+bool UWeaponSM::IsLockedAttacking() const
+{
+	return bIsAttacking && !bIsComboWindowOpen;
 }
 
 void UWeaponSM::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

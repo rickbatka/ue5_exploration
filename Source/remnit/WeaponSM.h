@@ -7,6 +7,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "WeaponSM.generated.h"
 
+class ARemnitCharacter;
 /**
  * 
  */
@@ -21,10 +22,10 @@ class REMNIT_API UWeaponSM : public UStaticMeshComponent, public IAnimStateListe
 	TArray<UAnimMontage*> AttackMontages;
 
 protected:
-	ACharacter* Character;
+	ARemnitCharacter* Character;
 	int AttackIndex = 0;
-	bool bIsAttacking = false;
 
+	bool bIsAttacking = false;
 	// This is true for the last few frames of the attack anim where we accept the next input
 	bool bIsComboWindowOpen = false;
 	UAnimMontage* CurrentPlayingMontage;
@@ -36,6 +37,7 @@ protected:
 
 public:
 	void TryAttack();
+	bool IsLockedAttacking() const;
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 };
