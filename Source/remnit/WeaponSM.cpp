@@ -5,7 +5,7 @@
 
 #include "ComponentReregisterContext.h"
 #include "remnitCharacter.h"
-#include "GameFramework/Character.h"
+#include "GameFramework/Character.h"	
 #include "GameFramework/CharacterMovementComponent.h"
 
 bool UWeaponSM::OnNotifyBegin(const FName NotifyName, UAnimSequenceBase* Animation)

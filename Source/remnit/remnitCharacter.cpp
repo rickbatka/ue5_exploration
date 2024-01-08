@@ -14,6 +14,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "LockOnComponent.h"
+#include "Rifle.h"
 #include "WeaponSM.h"
 #include "Engine/SkeletalMeshSocket.h"
 
@@ -231,12 +232,18 @@ void ARemnitCharacter::Tick(float DeltaSeconds)
 
 void ARemnitCharacter::TryStartAiming()
 {
-	if(!GetCanTakeAnyAction())
+	if(GetIsRolling() || GetIsLockedAttacking())
 	{
 		return;
 	}
+
+	if(const auto RifleComponent = GetComponentByClass<URifle>(); RifleComponent)
+	{
+		//	PlayAnimMontage(RifleComponent->EquipMontage);
+		bIsAiming = true;
+	}	
+
 	
-	bIsAiming = true;
 }
 
 void ARemnitCharacter::TryStopAiming()
