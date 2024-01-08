@@ -63,6 +63,11 @@ ARemnitCharacter::ARemnitCharacter()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
+bool ARemnitCharacter::GetCanTakeAnyAction() const
+{
+	return !GetMovementComponent()->IsFalling() && !GetIsRolling() && !GetIsLockedAttacking();
+}
+
 bool ARemnitCharacter::GetIsRolling() const
 {
 	return DodgeRollComponent && DodgeRollComponent->bIsRolling;
@@ -110,13 +115,7 @@ void ARemnitCharacter::BeginPlay()
 }
 
 
-void ARemnitCharacter::SwingSwordMedium()
-{
-	if (!GetCharacterMovement()->IsFalling())
-	{
-		PlayAnimMontage(SwordAttackAMontage);
-	}
-}
+
 
 
 
@@ -159,6 +158,7 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 			EnhancedInputComponent->BindAction(SwordMediumAction, ETriggerEvent::Triggered, WeaponComponent, &UWeaponSM::TryAttack);
 		}
 
+		CurrentIsAimingInputValue = &EnhancedInputComponent->BindActionValue(AimAction);
 	}
 	else
 	{
@@ -209,9 +209,39 @@ void ARemnitCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+
+
 void ARemnitCharacter::Tick(float DeltaSeconds)
 {
+	if(!CurrentIsAimingInputValue)
+	{
+		return;
+	}
 
+	if(CurrentIsAimingInputValue->GetValue().Get<bool>() && !bIsAiming)
+	{
+		TryStartAiming();
+	}
+
+	if(!CurrentIsAimingInputValue->GetValue().Get<bool>() && bIsAiming)
+	{
+		TryStopAiming();
+	}
+}
+
+void ARemnitCharacter::TryStartAiming()
+{
+	if(!GetCanTakeAnyAction())
+	{
+		return;
+	}
+	
+	bIsAiming = true;
+}
+
+void ARemnitCharacter::TryStopAiming()
+{
+	bIsAiming = false;
 }
 
 // void ARemnitCharacter::AnimNotify_StartIFrames()

@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "remnitCharacter.generated.h"
 
+struct FEnhancedInputActionValueBinding;
 class UWeaponSM;
 class ULockOnComponent;
 class UDodgeRollComponent;
@@ -39,6 +40,11 @@ class ARemnitCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
 
+	/** Aim Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* AimAction;
+
+	
 	/** SwordMedium Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SwordMediumAction;
@@ -57,14 +63,16 @@ class ARemnitCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LockOnAction;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* SwordAttackAMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, meta = (AllowPrivateAccess = "true"))
+	bool bIsAiming;
+	
 	USkeletalMeshSocket* WeaponSocketR;
 	USkeletalMeshSocket* WeaponSocketL;
 public:
 	ARemnitCharacter();
 
+	bool GetCanTakeAnyAction() const;
 	bool GetIsRolling() const;
 	bool GetIsLockedAttacking() const;
 
@@ -78,7 +86,6 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-	void SwingSwordMedium();
 
 	UDodgeRollComponent* DodgeRollComponent;
 	ULockOnComponent* LockOnComponent;
@@ -86,6 +93,8 @@ protected:
 	
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsSwingingSword;
+
+	FEnhancedInputActionValueBinding* CurrentIsAimingInputValue;
 
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -95,6 +104,9 @@ protected:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	void TryStartAiming();
+	void TryStopAiming();
+	
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }

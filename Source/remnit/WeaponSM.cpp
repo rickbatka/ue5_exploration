@@ -98,7 +98,7 @@ void UWeaponSM::BeginPlay()
 
 void UWeaponSM::TryAttack()
 {
-	if (Character->GetCharacterMovement()->IsFalling() || Character->GetIsRolling() || (bIsAttacking && !bIsComboWindowOpen))
+	if (!Character->GetCanTakeAnyAction())
 	{
 		return;
 	}
@@ -109,7 +109,6 @@ void UWeaponSM::TryAttack()
 	}
 	
 	BeginAttack();
-	
 }
 
 bool UWeaponSM::IsLockedAttacking() const

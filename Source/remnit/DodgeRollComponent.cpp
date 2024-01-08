@@ -71,7 +71,7 @@ bool UDodgeRollComponent::OnNotifyEnd(const FName NotifyName, UAnimSequenceBase*
 
 void UDodgeRollComponent::TryRoll()
 {
-	if (!Character || bIsRolling || Character->GetCharacterMovement()->IsFalling() || Character->GetIsLockedAttacking())
+	if (!Character || !Character->GetCanTakeAnyAction())
 	{
 		return;
 	}
