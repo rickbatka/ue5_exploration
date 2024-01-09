@@ -76,7 +76,44 @@ bool ARemnitCharacter::GetIsRolling() const
 
 bool ARemnitCharacter::GetIsLockedAttacking() const
 {
-	return WeaponComponent && WeaponComponent->IsLockedAttacking();
+	if(const auto WeaponComponent = GetComponentByClass<UWeaponSM>(); WeaponComponent && WeaponComponent->IsLockedAttacking())
+	{
+		return true;
+	}
+	return false;
+}
+
+void ARemnitCharacter::EquipSword() const
+{
+	if(RifleComponent)
+	{
+		RifleComponent->Deactivate();
+		RifleComponent->SetVisibility(false);
+	}
+
+	if(SwordComponent)
+	{
+		SwordComponent->Activate();
+		SwordComponent->SetVisibility(true);
+	}
+}
+
+void ARemnitCharacter::EquipRifle() const
+{
+	if(SwordComponent)
+	{
+		SwordComponent->Deactivate();
+		SwordComponent->SetVisibility(false);
+	}
+
+	if(RifleComponent)
+	{
+		RifleComponent->Activate();
+		RifleComponent->SetVisibility(true);
+	}
+	
+	// auto RifleComponent = NewObject<URifle>(this);
+	// RifleComponent->SetupAttachment(GetMesh(), "Weapon_R");
 }
 
 //void AremnitCharacter::StartIFrames()
@@ -115,16 +152,12 @@ void ARemnitCharacter::BeginPlay()
 	}
 }
 
-
-
-
-
-
 void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	DodgeRollComponent = GetComponentByClass<UDodgeRollComponent>();
 	LockOnComponent = GetComponentByClass<ULockOnComponent>();
-	WeaponComponent = GetComponentByClass<UWeaponSM>();
+	SwordComponent = GetComponentByClass<UWeaponSM>();
+	RifleComponent = GetComponentByClass<URifle>();
 	
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
@@ -154,10 +187,7 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 			EnhancedInputComponent->BindAction(LockOnAction, ETriggerEvent::Triggered, LockOnComponent, &ULockOnComponent::ToggleLockOn);
 		}
 
-		if(WeaponComponent)
-		{
-			EnhancedInputComponent->BindAction(SwordMediumAction, ETriggerEvent::Triggered, WeaponComponent, &UWeaponSM::TryAttack);
-		}
+		EnhancedInputComponent->BindAction(AttackPrimaryAction, ETriggerEvent::Triggered, this, &ARemnitCharacter::TryAttack);
 
 		CurrentIsAimingInputValue = &EnhancedInputComponent->BindActionValue(AimAction);
 	}
@@ -230,6 +260,19 @@ void ARemnitCharacter::Tick(float DeltaSeconds)
 	}
 }
 
+void ARemnitCharacter::TryAttack()
+{
+	if(!bIsAiming && SwordComponent)
+	{
+		SwordComponent->TryAttack();
+	}
+	
+	if(bIsAiming && RifleComponent)
+	{
+		RifleComponent->TryFire();
+	}
+}
+
 void ARemnitCharacter::TryStartAiming()
 {
 	if(GetIsRolling() || GetIsLockedAttacking())
@@ -237,21 +280,15 @@ void ARemnitCharacter::TryStartAiming()
 		return;
 	}
 
-	if(const auto RifleComponent = GetComponentByClass<URifle>(); RifleComponent)
+	if(RifleComponent)
 	{
-		//	PlayAnimMontage(RifleComponent->EquipMontage);
+		EquipRifle();
 		bIsAiming = true;
 	}	
-
-	
 }
 
 void ARemnitCharacter::TryStopAiming()
 {
+	EquipSword();
 	bIsAiming = false;
 }
-
-// void ARemnitCharacter::AnimNotify_StartIFrames()
-// {
-// 	// Do nothing, for now using AnimNotifyState instead
-// }

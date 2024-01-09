@@ -20,16 +20,25 @@ class REMNIT_API URifle : public UStaticMeshComponent, public IAnimStateListener
 	virtual bool OnNotifyEnd(const FName NotifyName, UAnimSequenceBase* Animation) override;
 
 public:
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation)
-	UAnimMontage* ShootMontage;
+	URifle();
 	
+	void TryFire();	
 protected:
 	ARemnitCharacter* Character;
+	void Fire();
+	bool bIsFiring = false;
+	FTimerHandle FireCooldownTimer{};
+
+	UFUNCTION()
+	void FireCooldownExpired();
+	
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation)
+	UAnimMontage* ShootMontage;
+	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 };

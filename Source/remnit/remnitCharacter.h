@@ -9,6 +9,7 @@
 
 struct FEnhancedInputActionValueBinding;
 class UWeaponSM;
+class URifle;
 class ULockOnComponent;
 class UDodgeRollComponent;
 class USpringArmComponent;
@@ -44,10 +45,10 @@ class ARemnitCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AimAction;
 
-	
+
 	/** SwordMedium Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* SwordMediumAction;
+	UInputAction* AttackPrimaryAction;
 
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -75,9 +76,12 @@ public:
 	bool GetCanTakeAnyAction() const;
 	bool GetIsRolling() const;
 	bool GetIsLockedAttacking() const;
+	void TryAttack();
 
 	//UFUNCTION()
 	//void StartIFrames();
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Interp)
+	FTransform RecoilTransform;
 
 protected:
 	/** Called for movement input */
@@ -89,10 +93,11 @@ protected:
 
 	UDodgeRollComponent* DodgeRollComponent;
 	ULockOnComponent* LockOnComponent;
-	UWeaponSM* WeaponComponent;
-	
-	UPROPERTY(BlueprintReadWrite)
-	bool bIsSwingingSword;
+	UWeaponSM* SwordComponent;
+	URifle* RifleComponent;
+
+	void EquipSword() const;
+	void EquipRifle() const;
 
 	FEnhancedInputActionValueBinding* CurrentIsAimingInputValue;
 
