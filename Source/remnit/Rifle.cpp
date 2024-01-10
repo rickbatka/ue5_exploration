@@ -41,6 +41,7 @@ void URifle::Fire()
 	// Get a random kickback for this shot. Weight toward the top end, hence the max of `(KickbackPower * 1.33)` which is 30% above the actual max
 	const float KickbackMin = KickbackPower - RecoilVariance;
 	const float ThisBulletKickback = -1.0 * FMath::Clamp( (UKismetMathLibrary::RandomFloat() * (KickbackPower * 1.33)), KickbackMin, KickbackPower);
+	
 	// Kickback (recoil). The character will regain composure after some time according to the MarksmanSteadiness variable
 	Character->RecoilTransform.SetLocation({0 , ThisBulletKickback, ThisBulletKickback / 3});
 	Character->RecoilTransform.SetRotation(UE::Math::TQuat<double>(UE::Math::TRotator<double>{0, 0 , ThisBulletKickback}));
@@ -48,8 +49,6 @@ void URifle::Fire()
 	// Initiate cooldown until next bullet can be fired
 	GetWorld()->GetTimerManager().SetTimer(FireCooldownTimer, this, &URifle::FireCooldownExpired, FireRateCooldown, false);
 	UE_LOG(LogActorComponent, Error, TEXT("Kickback! %f"), ThisBulletKickback);
-	
-	
 }
 
 void URifle::FireCooldownExpired()
@@ -72,14 +71,17 @@ void URifle::BeginPlay()
 
 	/**
 	 * TODO RICK
-	 * - Switch to gun when aiming, back to sword when not (actually create / destroy actor components? make sure all pointer accesses are safe)
-	 *   - Have to re-regsiter input action listeners to properly find components at action time, in case they've been switched out
-	 * - Play equipping montage when starting aiming
-	 * - Add shooting action & animation (doesn't need to do anything)
 	 * - Implement camera zoom & reticle
-	 * - Fix aiming left hand attach to muzzle (IK?)
 	 */
 	
+}
+
+void URifle::MaintainAim(FTransform RightHandTransform, FTransform MuzzleTransform, FVector CameraGoal)
+{
+	
+	DrawDebugSphere(GetWorld(), RightHandTransform.GetLocation(), 5, 20, FColor::Red);
+	DrawDebugSphere(GetWorld(), MuzzleTransform.GetLocation(), 5, 20, FColor::Yellow);
+	DrawDebugSphere(GetWorld(), CameraGoal, 25, 20, FColor::Blue);
 }
 
 void URifle::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

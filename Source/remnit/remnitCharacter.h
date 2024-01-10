@@ -68,6 +68,7 @@ class ARemnitCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, meta = (AllowPrivateAccess = "true"))
 	bool bIsAiming;
 	
+	USkeletalMeshSocket* WeaponSocketRStock;
 	USkeletalMeshSocket* WeaponSocketRMuzzle;
 public:
 	ARemnitCharacter();
@@ -79,6 +80,14 @@ public:
 
 	//UFUNCTION()
 	//void StartIFrames();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Interp)
+	FTransform GunAimTransform;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Interp)
+	FRotator GunAimRotator;
+
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Interp)
 	FTransform RecoilTransform;
 

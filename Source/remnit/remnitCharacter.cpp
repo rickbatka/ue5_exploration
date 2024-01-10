@@ -17,6 +17,7 @@
 #include "Rifle.h"
 #include "WeaponSM.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/KismetMathLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -95,6 +96,8 @@ void ARemnitCharacter::EquipSword() const
 	{
 		SwordComponent->Activate();
 		SwordComponent->SetVisibility(true);
+		
+		
 	}
 }
 
@@ -110,6 +113,8 @@ void ARemnitCharacter::EquipRifle() const
 	{
 		RifleComponent->Activate();
 		RifleComponent->SetVisibility(true);
+		
+		
 	}
 	
 	// auto RifleComponent = NewObject<URifle>(this);
@@ -139,11 +144,15 @@ void ARemnitCharacter::BeginPlay()
 	CameraBoom->bUsePawnControlRotation = true; 
 	FollowCamera->bUsePawnControlRotation = false;
 
+	 
+	WeaponSocketRStock = GetMesh()->SkeletalMesh->FindSocket(FName("weapon_r_stock"));
 	WeaponSocketRMuzzle = GetMesh()->SkeletalMesh->FindSocket(FName("weapon_r_muzzle"));
-	if(!WeaponSocketRMuzzle)
+	if(!WeaponSocketRStock || !WeaponSocketRMuzzle)
 	{
 		UE_LOG(LogActor, Error, TEXT("Failed to find weapon muzzle socket!"));
 	}
+
+	EquipSword();
 }
 
 void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -253,6 +262,9 @@ void ARemnitCharacter::Tick(float DeltaSeconds)
 		return;
 	}
 
+	/**
+	 * Handle toggling between aiming gun and using melee
+	 */
 	if(CurrentIsAimingInputValue->GetValue().Get<bool>() && !bIsAiming)
 	{
 		TryStartAiming();
@@ -261,6 +273,32 @@ void ARemnitCharacter::Tick(float DeltaSeconds)
 	if(!CurrentIsAimingInputValue->GetValue().Get<bool>() && bIsAiming)
 	{
 		TryStopAiming();
+	}
+
+	/**
+	 * Gun aiming mode: Pull in camera and lock pawn rotation to camera rotation 
+	 */
+	if(bIsAiming)
+	{
+		const auto FacingDirection = FRotator{0, Controller->GetControlRotation().Yaw , 0};
+		SetActorRotation(FacingDirection, ETeleportType::TeleportPhysics);
+		if(RifleComponent)
+		{
+			
+			auto CameraLoc = FollowCamera->GetComponentTransform().GetLocation();
+			auto CameraForward = FollowCamera->GetComponentTransform().GetRotation().GetForwardVector().GetSafeNormal();
+			auto CameraGoal = CameraLoc + CameraForward * 2500;
+			//DrawDebugSphere(GetWorld(), CameraLoc + CameraForward * 2500, 250, 20, FColor::Blue);
+			//RifleComponent->MaintainAim(WeaponSocketRStock->GetSocketTransform(GetMesh()), WeaponSocketRMuzzle->GetSocketTransform(GetMesh()), CameraGoal);
+			GunAimRotator = UKismetMathLibrary::FindLookAtRotation(GetMesh()->GetBoneLocation("weapon_r") - RecoilTransform.GetLocation(), CameraGoal);
+
+			
+			DrawDebugCapsule(GetWorld(), WeaponSocketRStock->GetSocketTransform(GetMesh()).GetLocation(), 150, 50, GunAimRotator.Quaternion(), FColor::Green);
+
+
+			// Get right hand, subtract any recoil if present
+			//GetMesh()->GetBoneLocation("weapon_r")
+		}
 	}
 }
 
