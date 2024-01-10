@@ -278,27 +278,19 @@ void ARemnitCharacter::Tick(float DeltaSeconds)
 	/**
 	 * Gun aiming mode: Pull in camera and lock pawn rotation to camera rotation 
 	 */
-	if(bIsAiming)
+	if(bIsAiming && RifleComponent)
 	{
+		// Turn character toward target (Yaw only)
 		const auto FacingDirection = FRotator{0, Controller->GetControlRotation().Yaw , 0};
-		SetActorRotation(FacingDirection, ETeleportType::TeleportPhysics);
-		if(RifleComponent)
-		{
-			
-			auto CameraLoc = FollowCamera->GetComponentTransform().GetLocation();
-			auto CameraForward = FollowCamera->GetComponentTransform().GetRotation().GetForwardVector().GetSafeNormal();
-			auto CameraGoal = CameraLoc + CameraForward * 2500;
-			//DrawDebugSphere(GetWorld(), CameraLoc + CameraForward * 2500, 250, 20, FColor::Blue);
-			//RifleComponent->MaintainAim(WeaponSocketRStock->GetSocketTransform(GetMesh()), WeaponSocketRMuzzle->GetSocketTransform(GetMesh()), CameraGoal);
-			GunAimRotator = UKismetMathLibrary::FindLookAtRotation(GetMesh()->GetBoneLocation("weapon_r") - RecoilTransform.GetLocation(), CameraGoal);
+		SetActorRotation(FacingDirection);
 
-			
-			DrawDebugCapsule(GetWorld(), WeaponSocketRStock->GetSocketTransform(GetMesh()).GetLocation(), 150, 50, GunAimRotator.Quaternion(), FColor::Green);
+		// Angle rifle toward target
+		auto const CameraLoc = FollowCamera->GetComponentTransform().GetLocation();
+		auto const CameraForward = FollowCamera->GetComponentTransform().GetRotation().GetForwardVector().GetSafeNormal();
+		auto const CameraGoal = CameraLoc + CameraForward * 2500;
 
-
-			// Get right hand, subtract any recoil if present
-			//GetMesh()->GetBoneLocation("weapon_r")
-		}
+		// Ignore any possibly applied recoil when finding gun aim rotator; this is where we want to point before recoil is applied.
+		GunAimRotator = UKismetMathLibrary::FindLookAtRotation(CameraGoal, GetMesh()->GetBoneLocation("weapon_r") );
 	}
 }
 
@@ -326,6 +318,10 @@ void ARemnitCharacter::TryStartAiming()
 	{
 		EquipRifle();
 		bIsAiming = true;
+
+		// Move camera boom in
+		CameraBoom->TargetArmLength = CameraBoomLength_Rifle;
+		CameraBoom->SocketOffset = CameraBoomOffset_Rifle;
 	}	
 }
 
@@ -333,4 +329,6 @@ void ARemnitCharacter::TryStopAiming()
 {
 	EquipSword();
 	bIsAiming = false;
+	CameraBoom->TargetArmLength = CameraBoomLength_Melee;
+	CameraBoom->SocketOffset = FVector::ZeroVector;
 }

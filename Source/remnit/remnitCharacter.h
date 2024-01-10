@@ -67,10 +67,13 @@ class ARemnitCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, meta = (AllowPrivateAccess = "true"))
 	bool bIsAiming;
+
+	
 	
 	USkeletalMeshSocket* WeaponSocketRStock;
 	USkeletalMeshSocket* WeaponSocketRMuzzle;
 public:
+
 	ARemnitCharacter();
 
 	bool GetCanTakeAnyAction() const;
@@ -81,12 +84,20 @@ public:
 	//UFUNCTION()
 	//void StartIFrames();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	float CameraBoomLength_Melee = 400;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	float CameraBoomLength_Rifle = 235;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	FVector CameraBoomOffset_Rifle = {135, 0, -50};
+
+
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Interp)
 	FTransform GunAimTransform;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Interp)
 	FRotator GunAimRotator;
-
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Interp)
 	FTransform RecoilTransform;
