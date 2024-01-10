@@ -139,16 +139,10 @@ void ARemnitCharacter::BeginPlay()
 	CameraBoom->bUsePawnControlRotation = true; 
 	FollowCamera->bUsePawnControlRotation = false;
 
-	WeaponSocketR = GetMesh()->SkeletalMesh->FindSocket(FName("Weapon_R"));
-	WeaponSocketL = GetMesh()->SkeletalMesh->FindSocket(FName("Weapon_L"));
-	if(!WeaponSocketR || !WeaponSocketL)
+	WeaponSocketRMuzzle = GetMesh()->SkeletalMesh->FindSocket(FName("weapon_r_muzzle"));
+	if(!WeaponSocketRMuzzle)
 	{
-		UE_LOG(LogActor, Error, TEXT("Failed to find weapon socket!"));
-	}
-
-	if(WeaponSocketR)
-	{
-		//GetComponentByClass<UWeaponComponent>().ren
+		UE_LOG(LogActor, Error, TEXT("Failed to find weapon muzzle socket!"));
 	}
 }
 
@@ -198,6 +192,16 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 			       "'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."
 		       ), *GetNameSafe(this));
 	}
+}
+
+FTransform ARemnitCharacter::GetWeaponMuzzleTransform() const
+{
+	if(!WeaponSocketRMuzzle)
+	{
+		return FTransform::Identity;
+	}
+
+	return WeaponSocketRMuzzle->GetSocketTransform(GetMesh());
 }
 
 void ARemnitCharacter::Move(const FInputActionValue& Value)

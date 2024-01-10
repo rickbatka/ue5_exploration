@@ -3,6 +3,9 @@
 
 #include "Rifle.h"
 
+#include <map>
+#include <random>
+
 #include "ComponentReregisterContext.h"
 #include "remnitCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -24,7 +27,7 @@ URifle::URifle()
 
 void URifle::TryFire()
 {
-	if(!Character || !ShootMontage || bIsFiring)
+	if(!Character || bIsFiring)
 	{
 		return;
 	}
@@ -33,12 +36,20 @@ void URifle::TryFire()
 
 void URifle::Fire()
 {
-	//GetWorld()->GetTimerManager().SetTimer(FireCooldownTimer, this, &URifle::FireCooldownExpired,1.,  false);
 	bIsFiring = true;
 
-	// TODO Rick Tuesday: IK the left hand onto the gun, IK the right forearm to the right hand during recoil.
-	Character->RecoilTransform.SetLocation({0 , -6, 2.5});
-	Character->RecoilTransform.SetRotation(UE::Math::TQuat<double>(UE::Math::TRotator<double>{0, 0 , -8}));
+	// Get a random kickback for this shot. Weight toward the top end, hence the max of `(KickbackPower * 1.33)` which is 30% above the actual max
+	const float KickbackMin = KickbackPower - RecoilVariance;
+	const float ThisBulletKickback = -1.0 * FMath::Clamp( (UKismetMathLibrary::RandomFloat() * (KickbackPower * 1.33)), KickbackMin, KickbackPower);
+	// Kickback (recoil). The character will regain composure after some time according to the MarksmanSteadiness variable
+	Character->RecoilTransform.SetLocation({0 , ThisBulletKickback, ThisBulletKickback / 3});
+	Character->RecoilTransform.SetRotation(UE::Math::TQuat<double>(UE::Math::TRotator<double>{0, 0 , ThisBulletKickback}));
+
+	// Initiate cooldown until next bullet can be fired
+	GetWorld()->GetTimerManager().SetTimer(FireCooldownTimer, this, &URifle::FireCooldownExpired, FireRateCooldown, false);
+	UE_LOG(LogActorComponent, Error, TEXT("Kickback! %f"), ThisBulletKickback);
+	
+	
 }
 
 void URifle::FireCooldownExpired()
@@ -51,7 +62,7 @@ void URifle::FireCooldownExpired()
 void URifle::BeginPlay()
 {
 	Super::BeginPlay();
-	//PrimaryComponentTick.bCanEverTick = true;
+	
 	Character = GetOwner<ARemnitCharacter>();
 	if (!Character)
 	{
@@ -79,11 +90,12 @@ void URifle::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponent
 	{
 		if(Character->RecoilTransform.Rotator().IsNearlyZero(0.5) && Character->RecoilTransform.GetLocation().IsNearlyZero(0.5))
 		{
-			FireCooldownExpired();
+			Character->RecoilTransform.SetLocation(FTransform::Identity.GetLocation());
+			Character->RecoilTransform.SetRotation(FTransform::Identity.GetRotation());
 		}
 		else
 		{
-			const auto CurrentStep = UKismetMathLibrary::TInterpTo(Character->RecoilTransform, FTransform::Identity, DeltaTime, 10);
+			const auto CurrentStep = UKismetMathLibrary::TInterpTo(Character->RecoilTransform, FTransform::Identity, DeltaTime, MarksmanSteadiness);
 			Character->RecoilTransform.SetLocation(CurrentStep.GetLocation());
 			Character->RecoilTransform.SetRotation(CurrentStep.GetRotation());
 		}
