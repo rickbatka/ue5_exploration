@@ -17,6 +17,7 @@
 #include "Rifle.h"
 #include "WeaponSM.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Engine/StaticMeshSocket.h"
 #include "Kismet/KismetMathLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -84,7 +85,7 @@ bool ARemnitCharacter::GetIsLockedAttacking() const
 	return false;
 }
 
-void ARemnitCharacter::EquipSword() const
+void ARemnitCharacter::EquipSword() 
 {
 	if(RifleComponent)
 	{
@@ -97,11 +98,11 @@ void ARemnitCharacter::EquipSword() const
 		SwordComponent->Activate();
 		SwordComponent->SetVisibility(true);
 	}
-	CameraBoom->TargetArmLength = CameraBoomLength_Melee;
-	CameraBoom->SocketOffset = CameraBoomOffset_Melee;
+	CurrentCameraBoomLength = CameraBoomLength_Melee;
+	CurrentCameraBoomOffset = CameraBoomOffset_Melee;
 }
 
-void ARemnitCharacter::EquipRifle() const
+void ARemnitCharacter::EquipRifle() 
 {
 	if(SwordComponent)
 	{
@@ -115,8 +116,8 @@ void ARemnitCharacter::EquipRifle() const
 		RifleComponent->SetVisibility(true);
 	}
 	// Move camera boom in
-	CameraBoom->TargetArmLength = CameraBoomLength_Rifle;
-	CameraBoom->SocketOffset = CameraBoomOffset_Rifle;
+	CurrentCameraBoomLength = CameraBoomLength_Rifle;
+	CurrentCameraBoomOffset = CameraBoomOffset_Rifle;
 }
 
 //void AremnitCharacter::StartIFrames()
@@ -142,14 +143,6 @@ void ARemnitCharacter::BeginPlay()
 	CameraBoom->bUsePawnControlRotation = true; 
 	FollowCamera->bUsePawnControlRotation = false;
 
-	 
-	WeaponSocketRStock = GetMesh()->SkeletalMesh->FindSocket(FName("weapon_r_stock"));
-	WeaponSocketRMuzzle = GetMesh()->SkeletalMesh->FindSocket(FName("weapon_r_muzzle"));
-	if(!WeaponSocketRStock || !WeaponSocketRMuzzle)
-	{
-		UE_LOG(LogActor, Error, TEXT("Failed to find weapon muzzle socket!"));
-	}
-
 	EquipSword();
 }
 
@@ -159,6 +152,11 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	LockOnComponent = GetComponentByClass<ULockOnComponent>();
 	SwordComponent = GetComponentByClass<UWeaponSM>();
 	RifleComponent = GetComponentByClass<URifle>();
+	RifleMuzzleSocket = RifleComponent->GetStaticMesh()->FindSocket("muzzle");
+	if(!RifleMuzzleSocket)
+	{
+		UE_LOG(LogActor, Error, TEXT("Failed to find Muzzle Socket!"));
+	}
 	
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
@@ -203,12 +201,21 @@ void ARemnitCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 FTransform ARemnitCharacter::GetWeaponMuzzleTransform() const
 {
-	if(!WeaponSocketRMuzzle)
+	if(!RifleComponent || !RifleMuzzleSocket)
 	{
 		return FTransform::Identity;
 	}
 
-	return WeaponSocketRMuzzle->GetSocketTransform(GetMesh());
+	return FTransform{RifleComponent->GetSocketLocation("muzzle"), };
+	// FTransform Result{};
+	// if (const bool bSucceeded = RifleMuzzleSocket->GetSocketTransform(Result, RifleComponent); bSucceeded)
+	// {
+	// 	const auto FacingDirection = FRotator{0, Controller->GetControlRotation().Yaw , 0};
+	// 	Result.SetRotation(FacingDirection.Quaternion());
+	// 	return Result;
+	// }
+	// UE_LOG(LogActor, Error, TEXT("Failed to locate muzzle socket in world space"));
+	// return FTransform::Identity;
 }
 
 void ARemnitCharacter::Move(const FInputActionValue& Value)
@@ -289,8 +296,12 @@ void ARemnitCharacter::Tick(float DeltaSeconds)
 
 		// Ignore any possibly applied recoil when finding gun aim rotator; this is where we want to point before recoil is applied.
 		const auto CameraPitch = UKismetMathLibrary::FindLookAtRotation(CameraGoal, GetMesh()->GetBoneLocation("weapon_r"));
-		GunAimRotator = FRotator{CameraPitch.Pitch, 0, 0};
+		GunAimRotator = FRotator{CameraPitch.Pitch, 15, 0};
 	}
+
+	//
+	CameraBoom->TargetArmLength = UKismetMathLibrary::FInterpTo(CameraBoom->TargetArmLength, CurrentCameraBoomLength, DeltaSeconds, CameraBoomTransitionSpeed);
+	CameraBoom->SocketOffset = UKismetMathLibrary::VInterpTo(CameraBoom->SocketOffset, CurrentCameraBoomOffset, DeltaSeconds, CameraBoomTransitionSpeed);
 }
 
 void ARemnitCharacter::TryAttack()

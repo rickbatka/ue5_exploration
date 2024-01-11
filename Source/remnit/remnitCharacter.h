@@ -68,10 +68,6 @@ class ARemnitCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation, meta = (AllowPrivateAccess = "true"))
 	bool bIsAiming;
 
-	
-	
-	USkeletalMeshSocket* WeaponSocketRStock;
-	USkeletalMeshSocket* WeaponSocketRMuzzle;
 public:
 
 	ARemnitCharacter();
@@ -94,7 +90,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	FVector CameraBoomOffset_Rifle = {0, -50, 100};
 
+	UPROPERTY(BlueprintReadOnly, Category = Animation)
+	float CurrentCameraBoomLength;
+	UPROPERTY(BlueprintReadOnly, Category = Animation)
+	FVector CurrentCameraBoomOffset;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	float CameraBoomTransitionSpeed = 20;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Interp)
 	FTransform GunAimTransform;
@@ -105,9 +107,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Interp)
 	FTransform RecoilTransform;
 	
-
 	UFUNCTION(BlueprintGetter)
 	FTransform GetWeaponMuzzleTransform() const;
+
+	UPROPERTY(BlueprintReadOnly)
+	UStaticMeshSocket* RifleMuzzleSocket;
 
 protected:
 	/** Called for movement input */
@@ -122,8 +126,8 @@ protected:
 	UWeaponSM* SwordComponent;
 	URifle* RifleComponent;
 
-	void EquipSword() const;
-	void EquipRifle() const;
+	void EquipSword();
+	void EquipRifle();
 
 	FEnhancedInputActionValueBinding* CurrentIsAimingInputValue;
 
