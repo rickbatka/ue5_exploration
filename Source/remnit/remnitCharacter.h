@@ -97,6 +97,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	float CameraBoomTransitionSpeed = 20;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
+	float ReticleSize = 10;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
+	float ReticleGrowFactor = 2.0;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
+	float ReticleGrowSpeed = 10.0;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
+	float ReticleThickness = 2;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HUD)
+	FColor ReticleColor = FColor::Silver;
+	float CurrentReticleSize = ReticleSize;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Interp)
 	FTransform GunAimTransform;
@@ -141,8 +153,10 @@ protected:
 
 	void TryStartAiming();
 	void TryStopAiming();
-	
+
 public:
+	virtual void PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir) override;
+
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/

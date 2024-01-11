@@ -14,10 +14,13 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "LockOnComponent.h"
+#include "RemnitHud.h"
 #include "Rifle.h"
 #include "WeaponSM.h"
+#include "Engine/Canvas.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Engine/StaticMeshSocket.h"
+#include "GameFramework/HUD.h"
 #include "Kismet/KismetMathLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -64,6 +67,8 @@ ARemnitCharacter::ARemnitCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	
 }
 
 bool ARemnitCharacter::GetCanTakeAnyAction() const
@@ -130,13 +135,21 @@ void ARemnitCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
-	//Add Input Mapping Context
+	
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
+		//Add Input Mapping Context
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
+
+		// Initalize HUD overlay so this actor can draw on the hud from `PostRenderFor()`
+		if (ARemnitHud* Hud = Cast<ARemnitHud>(PlayerController->GetHUD()); Hud)
+		{
+			Hud->AddPostRenderedActor(this);	
+		}
+		
 	}
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -298,7 +311,8 @@ void ARemnitCharacter::Tick(float DeltaSeconds)
 		const auto CameraPitch = UKismetMathLibrary::FindLookAtRotation(CameraGoal, GetMesh()->GetBoneLocation("weapon_r"));
 		GunAimRotator = FRotator{CameraPitch.Pitch, 15, 0};
 	}
-
+	// Update reticle size, which will lag behind recoil kickback smoothly.
+	CurrentReticleSize = UKismetMathLibrary::FInterpTo(CurrentReticleSize, ReticleSize + ReticleGrowFactor * RecoilTransform.GetLocation().Size(), DeltaSeconds, ReticleGrowSpeed);
 	//
 	CameraBoom->TargetArmLength = UKismetMathLibrary::FInterpTo(CameraBoom->TargetArmLength, CurrentCameraBoomLength, DeltaSeconds, CameraBoomTransitionSpeed);
 	CameraBoom->SocketOffset = UKismetMathLibrary::VInterpTo(CameraBoom->SocketOffset, CurrentCameraBoomOffset, DeltaSeconds, CameraBoomTransitionSpeed);
@@ -336,4 +350,15 @@ void ARemnitCharacter::TryStopAiming()
 	EquipSword();
 	bIsAiming = false;
 
+}
+
+void ARemnitCharacter::PostRenderFor(APlayerController* PC, UCanvas* Canvas, FVector CameraPosition, FVector CameraDir)
+{
+	Super::PostRenderFor(PC, Canvas, CameraPosition, CameraDir);
+
+	if(bIsAiming)
+	{
+		Canvas->K2_DrawLine({Canvas->SizeX / 2. - CurrentReticleSize, Canvas->SizeY / 2.}, {Canvas->SizeX / 2. + CurrentReticleSize, Canvas->SizeY / 2.}, ReticleThickness);
+		Canvas->K2_DrawLine({Canvas->SizeX / 2., Canvas->SizeY / 2. - CurrentReticleSize}, {Canvas->SizeX / 2. , Canvas->SizeY / 2. + CurrentReticleSize}, ReticleThickness);
+	}
 }

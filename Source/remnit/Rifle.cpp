@@ -45,7 +45,7 @@ void URifle::Fire()
 
 	// Initiate cooldown until next bullet can be fired
 	GetWorld()->GetTimerManager().SetTimer(FireCooldownTimer, this, &URifle::FireCooldownExpired, FireRateCooldown, false);
-	UE_LOG(LogActorComponent, Error, TEXT("Kickback! %f"), ThisBulletKickback);
+	//UE_LOG(LogActorComponent, Warning, TEXT("Kickback! %f"), ThisBulletKickback);
 }
 
 void URifle::FireCooldownExpired()
@@ -68,8 +68,8 @@ void URifle::BeginPlay()
 
 	/**
 	 * TODO RICK
-	 * - Implement camera zoom & reticle
-	 * - Fix left hand IK (or not, whatever.)
+	 * - Implement reticle
+	 * - Implement camera shake
 	 */
 	
 }

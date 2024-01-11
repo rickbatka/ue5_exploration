@@ -2,6 +2,7 @@
 
 #include "remnitGameMode.h"
 #include "remnitCharacter.h"
+#include "RemnitHud.h"
 #include "UObject/ConstructorHelpers.h"
 
 AremnitGameMode::AremnitGameMode()
@@ -11,5 +12,11 @@ AremnitGameMode::AremnitGameMode()
 	if (PlayerPawnBPClass.Class != NULL)
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<ARemnitHud> RemnitHUDBPClass(TEXT("Script/Engine.Blueprint'/Game/Remnit/BP_RemnitHud.BP_RemnitHud_C'"));
+	if (RemnitHUDBPClass.Class != NULL)
+	{
+		HUDClass = RemnitHUDBPClass.Class;
 	}
 }
