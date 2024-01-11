@@ -87,9 +87,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	float CameraBoomLength_Melee = 400;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
+	FVector CameraBoomOffset_Melee = {0, 0, 100};
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
 	float CameraBoomLength_Rifle = 235;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animation)
-	FVector CameraBoomOffset_Rifle = {135, 0, -50};
+	FVector CameraBoomOffset_Rifle = {0, -50, 100};
 
 
 	
@@ -101,6 +104,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Interp)
 	FTransform RecoilTransform;
+	
 
 	UFUNCTION(BlueprintGetter)
 	FTransform GetWeaponMuzzleTransform() const;

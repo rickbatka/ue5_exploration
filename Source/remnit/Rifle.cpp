@@ -40,7 +40,7 @@ void URifle::Fire()
 	const float ThisBulletKickback = -1 * FMath::Clamp( (UKismetMathLibrary::RandomFloat() * (KickbackPower * 1.33)), KickbackMin, KickbackPower);
 	
 	// Kickback (recoil). The character will regain composure after some time according to the MarksmanSteadiness variable
-	Character->RecoilTransform.SetLocation({0 , ThisBulletKickback, ThisBulletKickback / 3});
+	Character->RecoilTransform.SetLocation({0 , ThisBulletKickback, -ThisBulletKickback / 4});
 	Character->RecoilTransform.SetRotation(UE::Math::TQuat<double>(UE::Math::TRotator<double>{0, 0 , ThisBulletKickback * 2}));
 
 	// Initiate cooldown until next bullet can be fired

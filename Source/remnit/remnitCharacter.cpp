@@ -96,9 +96,9 @@ void ARemnitCharacter::EquipSword() const
 	{
 		SwordComponent->Activate();
 		SwordComponent->SetVisibility(true);
-		
-		
 	}
+	CameraBoom->TargetArmLength = CameraBoomLength_Melee;
+	CameraBoom->SocketOffset = CameraBoomOffset_Melee;
 }
 
 void ARemnitCharacter::EquipRifle() const
@@ -113,12 +113,10 @@ void ARemnitCharacter::EquipRifle() const
 	{
 		RifleComponent->Activate();
 		RifleComponent->SetVisibility(true);
-		
-		
 	}
-	
-	// auto RifleComponent = NewObject<URifle>(this);
-	// RifleComponent->SetupAttachment(GetMesh(), "Weapon_R");
+	// Move camera boom in
+	CameraBoom->TargetArmLength = CameraBoomLength_Rifle;
+	CameraBoom->SocketOffset = CameraBoomOffset_Rifle;
 }
 
 //void AremnitCharacter::StartIFrames()
@@ -290,7 +288,8 @@ void ARemnitCharacter::Tick(float DeltaSeconds)
 		auto const CameraGoal = CameraLoc + CameraForward * 2500;
 
 		// Ignore any possibly applied recoil when finding gun aim rotator; this is where we want to point before recoil is applied.
-		GunAimRotator = UKismetMathLibrary::FindLookAtRotation(CameraGoal, GetMesh()->GetBoneLocation("weapon_r") );
+		const auto CameraPitch = UKismetMathLibrary::FindLookAtRotation(CameraGoal, GetMesh()->GetBoneLocation("weapon_r"));
+		GunAimRotator = FRotator{CameraPitch.Pitch, 0, 0};
 	}
 }
 
@@ -318,10 +317,6 @@ void ARemnitCharacter::TryStartAiming()
 	{
 		EquipRifle();
 		bIsAiming = true;
-
-		// Move camera boom in
-		CameraBoom->TargetArmLength = CameraBoomLength_Rifle;
-		CameraBoom->SocketOffset = CameraBoomOffset_Rifle;
 	}	
 }
 
@@ -329,6 +324,5 @@ void ARemnitCharacter::TryStopAiming()
 {
 	EquipSword();
 	bIsAiming = false;
-	CameraBoom->TargetArmLength = CameraBoomLength_Melee;
-	CameraBoom->SocketOffset = FVector::ZeroVector;
+
 }
